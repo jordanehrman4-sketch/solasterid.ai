@@ -20,9 +20,9 @@ Most LLM agents are built around a single loop:
 
 ```text
 prompt → reason → answer
-
+```
 In Solasterid:
-
+```
 prompt
   → Listenerbot paraphrases and distributes the task
   → specialist arms produce structured reports
@@ -30,7 +30,7 @@ prompt
   → architecture may mutate between rounds
   → Speakerbot either continues deliberation or emits an atomic final render
   → memory, transcripts, diagnostics, and architecture snapshots persist
-
+```
 The goal is not just better answers. The goal is to study whether persistent, role-diverse, self-auditing agent ecologies can become more useful over time without collapsing into bloat, repetition, schema drift, or ornamental self-talk.
 
 # Current features
