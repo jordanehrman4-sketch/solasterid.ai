@@ -1,10 +1,12 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useMemo, useEffect, useRef, useState } from "react";
 import type { SolasteridState, SolasteridArm, SolasteridCommittee } from "../lib/solasteridState";
+import { ArmDetailPanel } from "./ArmDetailPanel";
 
-type Props = { state: SolasteridState };
+type Props = {
+  state: SolasteridState;
+};
 
-// Bubble particle type
 type Bubble = { id: number; x: number; size: number; delay: number; duration: number };
 
 function useBubbles(count = 18) {
@@ -19,24 +21,20 @@ function useBubbles(count = 18) {
   }, [count]);
 }
 
-// Compute arm tip positions
 function armLayout(arms: SolasteridArm[], committees: SolasteridCommittee[], cx: number, cy: number) {
   const active = arms.filter((a) => a.status === "active");
   const retired = arms.filter((a) => a.status === "retired");
   const probation = arms.filter((a) => a.status === "probation");
 
-  // Build a committee-sector map: sort committees by layer then id
   const sortedComms = [...committees].sort((a, b) => (a.layer ?? 0) - (b.layer ?? 0) || a.id.localeCompare(b.id));
   const commOrder = sortedComms.map((c) => c.id);
 
-  // Assign active arms to sectors based on their first committee
   const commSectors: Record<string, SolasteridArm[]> = {};
   for (const arm of active) {
     const cid = arm.committeeIds[0] ?? "__none";
     if (!commSectors[cid]) commSectors[cid] = [];
     commSectors[cid].push(arm);
   }
-  // Arms without a committee
   const unassigned = active.filter((a) => !a.committeeIds.length);
   if (unassigned.length) commSectors["__none"] = unassigned;
 
@@ -45,7 +43,7 @@ function armLayout(arms: SolasteridArm[], committees: SolasteridCommittee[], cx:
   );
 
   const totalActive = active.length || 1;
-  let currentAngle = -Math.PI / 2; // start at top
+  let currentAngle = -Math.PI / 2;
 
   type ArmPos = { arm: SolasteridArm; x: number; y: number; angle: number; r: number };
   const positions: ArmPos[] = [];
@@ -66,16 +64,12 @@ function armLayout(arms: SolasteridArm[], committees: SolasteridCommittee[], cx:
       color: comm?.color ?? "#67e8f9",
     });
 
-    // Place arms evenly within sector
     for (let i = 0; i < sectorArms.length; i++) {
-      const t = sectorArms.length === 1
-        ? 0.5
-        : i / (sectorArms.length - 1);
+      const t = sectorArms.length === 1 ? 0.5 : i / (sectorArms.length - 1);
       const angle = sectorStart + t * sectorSpan;
-      // Vary radius slightly by committee layer
       const layer = comm?.layer ?? 1;
-      const baseR = 130 + layer * 18;
-      const r = baseR + (i % 2 === 0 ? 0 : 8);
+      const baseR = 125 + layer * 16;
+      const r = baseR + (i % 2 === 0 ? 0 : 10);
       positions.push({
         arm: sectorArms[i],
         x: cx + Math.cos(angle) * r,
@@ -87,26 +81,23 @@ function armLayout(arms: SolasteridArm[], committees: SolasteridCommittee[], cx:
     currentAngle = sectorEnd;
   }
 
-  // Retired arms: small ring inside, grey
   const retiredPositions = retired.map((arm, i) => {
     const angle = (i / (retired.length || 1)) * Math.PI * 2 - Math.PI / 2;
-    const r = 80;
+    const r = 75;
     return { arm, x: cx + Math.cos(angle) * r, y: cy + Math.sin(angle) * r, angle, r };
   });
 
-  // Probation arms: outside active ring, pulsing
   const probationPositions = probation.map((arm, i) => {
     const angle = (i / (probation.length || 1)) * Math.PI * 2 - Math.PI / 3;
-    const r = 175;
+    const r = 178;
     return { arm, x: cx + Math.cos(angle) * r, y: cy + Math.sin(angle) * r, angle, r };
   });
 
   return { positions, retiredPositions, probationPositions, sectorBounds };
 }
 
-// Quadratic bezier control point for organic arm curve
 function armPath(cx: number, cy: number, x2: number, y2: number, angle: number) {
-  const wiggle = 22 * Math.sin(angle * 3.7);
+  const wiggle = 20 * Math.sin(angle * 3.7);
   const perpX = -Math.sin(angle) * wiggle;
   const perpY = Math.cos(angle) * wiggle;
   const cpx = (cx + x2) / 2 + perpX;
@@ -114,26 +105,20 @@ function armPath(cx: number, cy: number, x2: number, y2: number, angle: number) 
   return `M ${cx} ${cy} Q ${cpx} ${cpy} ${x2} ${y2}`;
 }
 
-// Coral silhouette SVG at the bottom
 function CoralSilhouettes() {
   return (
     <g opacity="0.35">
-      {/* Left coral */}
       <path d="M 20 440 Q 30 390 22 360 Q 40 330 28 300 Q 50 310 35 280 M 28 380 Q 10 350 18 320 M 22 340 Q 42 320 38 295" stroke="#e0664a" strokeWidth="7" strokeLinecap="round" fill="none" />
       <path d="M 55 440 Q 65 400 58 380 Q 80 355 62 330" stroke="#c0a060" strokeWidth="5" strokeLinecap="round" fill="none" />
-      {/* Right coral */}
       <path d="M 420 440 Q 415 390 425 360 Q 405 325 418 295 Q 395 310 408 275 M 418 380 Q 435 345 428 315 M 424 335 Q 402 318 406 288" stroke="#e0664a" strokeWidth="7" strokeLinecap="round" fill="none" />
       <path d="M 385 440 Q 378 405 388 382 Q 368 355 380 328" stroke="#c0a060" strokeWidth="5" strokeLinecap="round" fill="none" />
-      {/* Center low anemone */}
       <path d="M 200 440 Q 205 430 200 420 Q 215 410 205 398" stroke="#e075a0" strokeWidth="4" strokeLinecap="round" fill="none" />
       <path d="M 240 440 Q 244 432 240 424 Q 252 415 244 404" stroke="#e075a0" strokeWidth="4" strokeLinecap="round" fill="none" />
-      {/* Sand bottom */}
       <ellipse cx="220" cy="445" rx="210" ry="8" fill="#b8a870" opacity="0.25" />
     </g>
   );
 }
 
-// Animated caustic light rays
 function CausticRays() {
   const rays = useMemo(() => Array.from({ length: 6 }, (_, i) => ({
     id: i,
@@ -165,13 +150,15 @@ export function SolasteridCanvas({ state }: Props) {
 
   const bubbles = useBubbles(16);
   const [pulsingCore, setPulsingCore] = useState(false);
+  const [selectedArmId, setSelectedArmId] = useState<string | null>(null);
+  const [hoveredArmId, setHoveredArmId] = useState<string | null>(null);
   const prevRound = useRef(state.round);
 
   useEffect(() => {
     if (state.round !== prevRound.current) {
       prevRound.current = state.round;
       setPulsingCore(true);
-      const t = setTimeout(() => setPulsingCore(false), 1000);
+      const t = setTimeout(() => setPulsingCore(false), 900);
       return () => clearTimeout(t);
     }
   }, [state.round]);
@@ -181,10 +168,21 @@ export function SolasteridCanvas({ state }: Props) {
     [state.arms, state.committees, cx, cy]
   );
 
+  // Labels visible when: ≤12 active arms, or arm is hovered/selected
   const activeCount = state.arms.filter((a) => a.status === "active").length;
+  const alwaysShowLabels = activeCount <= 12;
+
+  const selectedArm = state.arms.find((a) => a.id === selectedArmId) ?? null;
+
+  function handleArmClick(armId: string) {
+    setSelectedArmId((prev) => (prev === armId ? null : armId));
+  }
 
   return (
-    <section className="relative overflow-hidden rounded-3xl border border-cyan-300/20 shadow-2xl" style={{ background: "linear-gradient(180deg, #050d1a 0%, #061428 40%, #081830 70%, #0a1410 100%)", minHeight: 500 }}>
+    <section
+      className="relative overflow-hidden rounded-3xl border border-cyan-300/20 shadow-2xl"
+      style={{ background: "linear-gradient(180deg, #050d1a 0%, #061428 40%, #081830 70%, #0a1410 100%)", minHeight: 500 }}
+    >
       {/* Floating bubbles */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         {bubbles.map((b) => (
@@ -198,7 +196,7 @@ export function SolasteridCanvas({ state }: Props) {
               height: b.size,
               background: "radial-gradient(circle at 30% 30%, rgba(103,232,249,0.3), transparent)",
             }}
-            animate={{ y: [0, -(window.innerHeight * 0.9)], opacity: [0.6, 0] }}
+            animate={{ y: [0, -600], opacity: [0.6, 0] }}
             transition={{ duration: b.duration, delay: b.delay, repeat: Infinity, ease: "linear" }}
           />
         ))}
@@ -232,18 +230,20 @@ export function SolasteridCanvas({ state }: Props) {
             <feGaussianBlur stdDeviation="6" result="blur" />
             <feMerge><feMergeNode in="blur" /><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
+          <filter id="selectedGlow">
+            <feGaussianBlur stdDeviation="9" result="blur" />
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="blur" /><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
         </defs>
 
-        {/* Caustic rays */}
         <CausticRays />
 
-        {/* Committee sector arcs (subtle outer ring) */}
+        {/* Committee sector arcs */}
         {sectorBounds.map((sector) => {
           if (sector.cid === "__none") return null;
-          const outerR = 160;
+          const outerR = 165;
           const arcThick = 10;
           const midAngle = (sector.startAngle + sector.endAngle) / 2;
-          // Draw arc segment
           const span = sector.endAngle - sector.startAngle;
           if (span < 0.05) return null;
           const x1 = cx + Math.cos(sector.startAngle) * outerR;
@@ -256,19 +256,18 @@ export function SolasteridCanvas({ state }: Props) {
               <path
                 d={`M ${cx + Math.cos(sector.startAngle) * (outerR - arcThick)} ${cy + Math.sin(sector.startAngle) * (outerR - arcThick)} A ${outerR - arcThick} ${outerR - arcThick} 0 ${largeArc} 1 ${cx + Math.cos(sector.endAngle) * (outerR - arcThick)} ${cy + Math.sin(sector.endAngle) * (outerR - arcThick)} L ${x2} ${y2} A ${outerR} ${outerR} 0 ${largeArc} 0 ${x1} ${y1} Z`}
                 fill={sector.color}
-                opacity="0.08"
+                opacity="0.07"
               />
-              {/* Committee label */}
               <text
                 x={cx + Math.cos(midAngle) * (outerR + 14)}
                 y={cy + Math.sin(midAngle) * (outerR + 14)}
                 textAnchor="middle"
                 dominantBaseline="middle"
                 fill={sector.color}
-                fontSize="6"
-                opacity="0.7"
+                fontSize="5.5"
+                opacity="0.65"
               >
-                {(state.committees.find((c) => c.id === sector.cid)?.name ?? "").slice(0, 18)}
+                {(state.committees.find((c) => c.id === sector.cid)?.name ?? "").slice(0, 16)}
               </text>
             </g>
           );
@@ -276,86 +275,112 @@ export function SolasteridCanvas({ state }: Props) {
 
         {/* Retired arms — fossilized inner ring */}
         {retiredPositions.map(({ arm, x, y, angle }) => (
-          <g key={arm.id} opacity="0.25">
-            <path
-              d={armPath(cx, cy, x, y, angle)}
-              stroke="#475569"
-              strokeWidth="6"
-              strokeLinecap="round"
-              fill="none"
-            />
-            <circle cx={x} cy={y} r="4" fill="#334155" />
+          <g
+            key={arm.id}
+            opacity={hoveredArmId === arm.id ? 0.55 : 0.2}
+            style={{ cursor: "pointer" }}
+            onClick={() => handleArmClick(arm.id)}
+            onMouseEnter={() => setHoveredArmId(arm.id)}
+            onMouseLeave={() => setHoveredArmId(null)}
+          >
+            <path d={armPath(cx, cy, x, y, angle)} stroke="#475569" strokeWidth="5" strokeLinecap="round" fill="none" />
+            <circle cx={x} cy={y} r="5" fill="#334155" />
+            {hoveredArmId === arm.id && (
+              <text x={x + Math.cos(angle) * 10} y={y + Math.sin(angle) * 10} textAnchor="middle" fill="#64748b" fontSize="7">
+                {arm.name.slice(0, 18)}
+              </text>
+            )}
           </g>
         ))}
 
         {/* Active arms */}
         <AnimatePresence>
-          {positions.map(({ arm, x, y, angle }, i) => (
-            <motion.g
-              key={arm.id}
-              initial={{ opacity: 0, scale: 0.3 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.3 }}
-              transition={{ duration: 0.7, delay: i * 0.04 }}
-            >
-              {/* Arm body */}
-              <motion.path
-                d={armPath(cx, cy, x, y, angle)}
-                stroke={arm.color ?? "#67e8f9"}
-                strokeWidth="14"
-                strokeLinecap="round"
-                fill="none"
-                filter="url(#glow)"
-                animate={{
-                  strokeOpacity: [0.75, 1, 0.75],
-                  strokeWidth: [13, 16, 13],
-                }}
-                transition={{ duration: 2.8 + i * 0.12, repeat: Infinity, ease: "easeInOut" }}
-              />
-              {/* Tip glow */}
-              <motion.circle
-                cx={x}
-                cy={y}
-                r="9"
-                fill={arm.color ?? "#67e8f9"}
-                filter="url(#strongGlow)"
-                animate={{ r: [8, 11, 8], opacity: [0.8, 1, 0.8] }}
-                transition={{ duration: 2.4 + i * 0.1, repeat: Infinity, ease: "easeInOut" }}
-              />
-              <circle cx={x} cy={y} r="4" fill="#fff" opacity="0.8" />
-              {/* Arm label */}
-              {arm.name && (
-                <text
-                  x={x + Math.cos(angle) * 16}
-                  y={y + Math.sin(angle) * 16}
-                  textAnchor={Math.cos(angle) > 0.1 ? "start" : Math.cos(angle) < -0.1 ? "end" : "middle"}
-                  dominantBaseline="middle"
-                  fill="#e2e8f0"
-                  fontSize="7.5"
-                  opacity="0.85"
-                >
-                  {arm.name.slice(0, 20)}
-                </text>
-              )}
-            </motion.g>
-          ))}
+          {positions.map(({ arm, x, y, angle }, i) => {
+            const isSelected = selectedArmId === arm.id;
+            const isHovered = hoveredArmId === arm.id;
+            const showLabel = alwaysShowLabels || isHovered || isSelected;
+            const color = arm.color ?? "#67e8f9";
+
+            return (
+              <motion.g
+                key={arm.id}
+                initial={{ opacity: 0, scale: 0.3 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.3 }}
+                transition={{ duration: 0.65, delay: i * 0.03 }}
+                style={{ cursor: "pointer" }}
+                onClick={() => handleArmClick(arm.id)}
+                onMouseEnter={() => setHoveredArmId(arm.id)}
+                onMouseLeave={() => setHoveredArmId(null)}
+              >
+                {/* Arm body */}
+                <motion.path
+                  d={armPath(cx, cy, x, y, angle)}
+                  stroke={color}
+                  strokeWidth={isSelected ? 18 : isHovered ? 16 : 13}
+                  strokeLinecap="round"
+                  fill="none"
+                  filter={isSelected ? "url(#selectedGlow)" : "url(#glow)"}
+                  opacity={isSelected ? 1 : isHovered ? 0.95 : 0.78}
+                  animate={{ strokeOpacity: [0.72, 1, 0.72] }}
+                  transition={{ duration: 2.8 + i * 0.12, repeat: Infinity, ease: "easeInOut" }}
+                />
+
+                {/* Hit zone (invisible, larger than the stroke) */}
+                <path
+                  d={armPath(cx, cy, x, y, angle)}
+                  stroke="transparent"
+                  strokeWidth="28"
+                  fill="none"
+                />
+
+                {/* Tip glow */}
+                <motion.circle
+                  cx={x}
+                  cy={y}
+                  r={isSelected ? 13 : 9}
+                  fill={color}
+                  filter={isSelected ? "url(#selectedGlow)" : "url(#strongGlow)"}
+                  animate={{ r: isSelected ? [12, 15, 12] : [8, 11, 8], opacity: [0.8, 1, 0.8] }}
+                  transition={{ duration: 2.4 + i * 0.1, repeat: Infinity, ease: "easeInOut" }}
+                />
+                <circle cx={x} cy={y} r={isSelected ? 5 : 4} fill="#fff" opacity={isSelected ? 1 : 0.8} />
+
+                {/* Label — always shown when ≤12 arms or when hovered/selected */}
+                <AnimatePresence>
+                  {showLabel && (
+                    <motion.text
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      x={x + Math.cos(angle) * 17}
+                      y={y + Math.sin(angle) * 17}
+                      textAnchor={Math.cos(angle) > 0.15 ? "start" : Math.cos(angle) < -0.15 ? "end" : "middle"}
+                      dominantBaseline="middle"
+                      fill={isSelected ? color : "#e2e8f0"}
+                      fontSize={isSelected ? 8.5 : 7.5}
+                      fontWeight={isSelected ? "bold" : "normal"}
+                      opacity={isSelected ? 1 : 0.85}
+                    >
+                      {arm.name.slice(0, 22)}
+                    </motion.text>
+                  )}
+                </AnimatePresence>
+              </motion.g>
+            );
+          })}
         </AnimatePresence>
 
-        {/* Probation arms — pulsing, desaturated */}
+        {/* Probation arms */}
         {probationPositions.map(({ arm, x, y, angle }, i) => (
           <motion.g
             key={arm.id}
             animate={{ opacity: [0.4, 0.85, 0.4] }}
             transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.3 }}
+            style={{ cursor: "pointer" }}
+            onClick={() => handleArmClick(arm.id)}
           >
-            <path
-              d={armPath(cx, cy, x, y, angle)}
-              stroke="#94a3b8"
-              strokeWidth="10"
-              strokeLinecap="round"
-              fill="none"
-              strokeDasharray="6 4"
-            />
+            <path d={armPath(cx, cy, x, y, angle)} stroke="#94a3b8" strokeWidth="10" strokeLinecap="round" fill="none" strokeDasharray="6 4" />
             <circle cx={x} cy={y} r="6" fill="#94a3b8" opacity="0.6" />
             <text x={x} y={y + 16} textAnchor="middle" fill="#94a3b8" fontSize="7" opacity="0.7">
               {arm.name.slice(0, 16)} (?)
@@ -365,9 +390,7 @@ export function SolasteridCanvas({ state }: Props) {
 
         {/* Central starfish body */}
         <motion.circle
-          cx={cx}
-          cy={cy}
-          r="38"
+          cx={cx} cy={cy} r="38"
           fill="url(#bodyGrad)"
           stroke="#0d9488"
           strokeWidth="3"
@@ -375,59 +398,59 @@ export function SolasteridCanvas({ state }: Props) {
           animate={{ r: [36, 42, 36], strokeOpacity: [0.6, 1, 0.6] }}
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
         />
-        {/* Core glow */}
         <motion.circle
-          cx={cx}
-          cy={cy}
-          r={pulsingCore ? 52 : 38}
+          cx={cx} cy={cy}
+          r={pulsingCore ? 54 : 38}
           fill="url(#coreGrad)"
-          opacity={pulsingCore ? 0.6 : 0.3}
+          opacity={pulsingCore ? 0.55 : 0.28}
           transition={{ duration: 0.5 }}
         />
 
-        {/* Speakerbot text */}
-        <text x={cx} y={cy - 6} textAnchor="middle" fill="#67e8f9" fontSize="9" fontWeight="bold" opacity="0.95">
+        <text x={cx} y={cy - 7} textAnchor="middle" fill="#67e8f9" fontSize="9" fontWeight="bold" opacity="0.95">
           Speakerbot
         </text>
-        <text x={cx} y={cy + 8} textAnchor="middle" fill="#94a3b8" fontSize="7.5">
-          r{state.round}
-        </text>
-        <text x={cx} y={cy + 20} textAnchor="middle" fill="#5eead4" fontSize="6.5" opacity="0.8">
+        <text x={cx} y={cy + 7} textAnchor="middle" fill="#94a3b8" fontSize="7.5">r{state.round}</text>
+        <text x={cx} y={cy + 19} textAnchor="middle" fill="#5eead4" fontSize="6.5" opacity="0.8">
           {activeCount} arms
         </text>
 
-        {/* Coral silhouettes at bottom */}
-        <g transform="translate(0,0)">
-          <CoralSilhouettes />
-        </g>
+        <CoralSilhouettes />
       </svg>
 
+      {/* Arm detail drawer */}
+      {selectedArm && (
+        <ArmDetailPanel
+          arm={selectedArm}
+          committees={state.committees}
+          transcript={state.transcript}
+          onClose={() => setSelectedArmId(null)}
+        />
+      )}
+
       {/* Status overlay */}
-      <div className="absolute left-4 top-4 glass-panel p-3 text-xs" style={{ maxWidth: 200 }}>
+      <div className="absolute left-4 top-4 glass-panel p-3 text-xs" style={{ maxWidth: 190 }}>
         <div className="text-glow-teal font-bold text-cyan-200 text-sm">Living Solasterid</div>
         <div className="mt-1 text-slate-400">
           <span className="text-cyan-300">{activeCount}</span> active
           {" · "}
           <span className="text-slate-500">{state.arms.filter((a) => a.status === "retired").length}</span> fossilized
-          {state.arms.filter((a) => a.status === "probation").length > 0 &&
-            <span> · <span className="text-slate-400">{state.arms.filter((a) => a.status === "probation").length}</span> probation</span>
-          }
         </div>
-        <div className="mt-1 text-slate-500">{state.committees.length} committees</div>
+        <div className="mt-1 text-slate-600 text-[10px]">{state.committees.length} committees</div>
+        {activeCount > 12 && !selectedArmId && (
+          <div className="mt-1.5 text-[9px] text-slate-600 italic">tap an arm to inspect</div>
+        )}
         {state.status === "running" && (
           <motion.div
-            className="mt-2 text-xs text-teal-400"
+            className="mt-2 text-[10px] text-teal-400"
             animate={{ opacity: [0.5, 1, 0.5] }}
             transition={{ duration: 1.2, repeat: Infinity }}
-          >
-            ◉ growing…
-          </motion.div>
+          >◉ growing…</motion.div>
         )}
       </div>
 
-      {/* Tempseed preview bottom bar */}
-      <div className="absolute bottom-0 left-0 right-0 glass-panel m-0 rounded-none rounded-b-3xl px-4 py-2 text-xs text-slate-400 border-t border-cyan-300/10">
-        <span className="text-cyan-600 mr-1">seed:</span>
+      {/* Tempseed preview */}
+      <div className="absolute bottom-0 left-0 right-0 rounded-none rounded-b-3xl border-t border-cyan-300/10 bg-slate-950/70 px-4 py-2 text-xs text-slate-400 backdrop-blur">
+        <span className="mr-1 text-cyan-700">seed:</span>
         {state.tempseed.slice(0, 160)}{state.tempseed.length > 160 ? "…" : ""}
       </div>
     </section>
