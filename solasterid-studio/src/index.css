@@ -69,10 +69,10 @@ html, body, #root {
 
 body {
   background:
-    radial-gradient(1200px 800px at 20% -10%, rgba(100,245,230,0.06), transparent 60%),
-    radial-gradient(900px 700px at 110% 10%, rgba(185,156,255,0.05), transparent 60%),
-    radial-gradient(1000px 800px at 50% 110%, rgba(255,111,145,0.04), transparent 60%),
-    linear-gradient(180deg, #03111F 0%, #061523 40%, #07182A 100%);
+    radial-gradient(1400px 1000px at 50% -10%, rgba(143,255,230,0.10), transparent 60%),
+    radial-gradient(900px 700px at 110% 30%, rgba(140,200,255,0.08), transparent 60%),
+    radial-gradient(1000px 800px at -10% 70%, rgba(100,200,210,0.07), transparent 60%),
+    linear-gradient(180deg, #0E2A48 0%, #0A2138 25%, #061C2E 60%, #051624 100%);
 }
 
 /* Numerals & IDs */
@@ -306,6 +306,12 @@ textarea:focus, input:focus, select:focus {
   50%      { box-shadow: 0 0 22px rgba(255,111,145,0.55); }
 }
 .roses-pulse { animation: rosesMeterPulse 0.5s ease-in-out 3; }
+
+/* Speech-bubble pulsing dots (used inside SVG foreignObject) */
+@keyframes speech-dot {
+  0%, 100% { opacity: 0.3; transform: translateY(0); }
+  50%      { opacity: 1;   transform: translateY(-1px); }
+}
 
 /* Live caustic shimmer behind big numbers */
 .tide-shimmer {

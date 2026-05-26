@@ -6,7 +6,7 @@ import {
   applyUserSeedUpdate,
   type SolasteridState,
 } from "../lib/solasteridState";
-import { buildGrowthPrompt } from "../lib/promptBuilders";
+import { buildGrowthPrompt, shouldInjectFullSeed } from "../lib/promptBuilders";
 import { callOpenAIStream } from "../lib/openaiClient";
 import type { StreamPhase } from "../lib/openaiClient";
 import { parseGrowthResult } from "../lib/modelSchemas";
@@ -53,6 +53,35 @@ function formatRelativeSeconds(savedAt: number | null): string {
   const m = Math.floor(s / 60);
   if (m < 60) return `${m}m ago`;
   return `${Math.floor(m / 60)}h ago`;
+}
+
+/**
+ * Pick what goes in the floating thought bubble during dawn/thinking.
+ * - On a seed-injection round (r1, r5, r10, …), show the tempseed itself
+ *   — that's literally what the prompt is repeating to the model.
+ * - Otherwise, summarize what the creature is chewing on: the most
+ *   recent speaker verdict, or the last round summary, or a short
+ *   "continuing from r{N}…" placeholder if nothing's happened yet.
+ *
+ * Always capped at ~24 words to fit the bubble.
+ */
+function buildThoughtForRound(state: SolasteridState, isSeedRound: boolean): string {
+  const cap = 24;
+  const head = (text: string) => {
+    const words = text.trim().split(/\s+/).filter(Boolean);
+    return words.slice(0, cap).join(" ") + (words.length > cap ? " …" : "");
+  };
+  if (isSeedRound) {
+    return head(state.tempseed);
+  }
+  // Walk recent transcript backwards looking for a meaningful continuation.
+  const recent = [...state.transcript].reverse();
+  const speaker = recent.find((e) => e.phase === "speaker_decision");
+  if (speaker?.content) return head(speaker.content);
+  const summary = recent.find((e) => e.phase === "round_summary");
+  if (summary?.content) return head(summary.content);
+  if (state.round === 0) return head(state.tempseed);
+  return `Continuing from r${state.round}…`;
 }
 
 export function GrowthConsole({ apiKey, onClearKey }: Props) {
@@ -149,11 +178,12 @@ export function GrowthConsole({ apiKey, onClearKey }: Props) {
     requestStartRef.current = Date.now();
     setHiddenTranscriptIds(new Set());
 
-    // ── Dawn: the water brightens, the seed shows as a thought ──
+    // ── Dawn: the water brightens, a thought appears ──
     setRoundPhase("dawn");
-    const seedWords = current.tempseed.trim().split(/\s+/).filter(Boolean);
-    const head = seedWords.slice(0, 20).join(" ");
-    setSeedThoughtText(head + (seedWords.length > 20 ? " …" : ""));
+    const nextRound = current.round + 1;
+    const isSeedRound = shouldInjectFullSeed(nextRound);
+    const thoughtText = buildThoughtForRound(current, isSeedRound);
+    setSeedThoughtText(thoughtText);
 
     // Sample thinking bubbles on up to 8 arms
     const activeArms = current.arms.filter((a) => a.status === "active");

@@ -43,14 +43,14 @@ export function ReefBackground({ width, height, alive = true }: Props) {
     >
       <defs>
         <radialGradient id="reefVignette" cx="50%" cy="40%" r="75%">
-          <stop offset="0%" stopColor="#0A2236" stopOpacity="0.0" />
-          <stop offset="55%" stopColor="#03111F" stopOpacity="0.0" />
-          <stop offset="100%" stopColor="#03111F" stopOpacity="0.85" />
+          <stop offset="0%" stopColor="#16395A" stopOpacity="0.0" />
+          <stop offset="55%" stopColor="#0A2138" stopOpacity="0.0" />
+          <stop offset="100%" stopColor="#061C2E" stopOpacity="0.85" />
         </radialGradient>
         <linearGradient id="reefDepth" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#0A2A40" />
-          <stop offset="40%" stopColor="#071D2E" />
-          <stop offset="100%" stopColor="#03111F" />
+          <stop offset="0%" stopColor="#1A4A6A" />
+          <stop offset="40%" stopColor="#0E2C48" />
+          <stop offset="100%" stopColor="#061C2E" />
         </linearGradient>
         <linearGradient id="caustic" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#8FFFE6" stopOpacity="0.55" />

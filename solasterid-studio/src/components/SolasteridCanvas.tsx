@@ -501,70 +501,90 @@ function SpeechBubble({
   tone: "thinking" | "speaking";
   delay: number;
 }) {
-  const charW = 5.8;
-  const pad = 10;
-  const displayText = tone === "thinking" ? "•••" : text;
-  const w = Math.min(190, Math.max(38, displayText.length * charW + pad * 2));
-  const h = 24;
-  const cornerR = 12;
-  const bubbleX = x - w / 2;
-  const bubbleY = y - h - 12;
+  // We use foreignObject so HTML/CSS handles real text wrapping. Sized
+  // generously so 20-word reports never clip; the bubble grows downward
+  // and the tail points down to the arm tip.
+  const W = tone === "thinking" ? 70 : 240;
+  const H = tone === "thinking" ? 36 : 110;
+  const tailH = 10;
+  const bubbleX = x - W / 2;
+  const bubbleY = y - H - tailH - 6;
   return (
     <motion.g
-      initial={{ opacity: 0, scale: 0.6, y: 6 }}
+      initial={{ opacity: 0, scale: 0.7, y: 6 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.8, y: -6 }}
+      exit={{ opacity: 0, scale: 0.85, y: -6 }}
       transition={{ duration: 0.4, delay, ease: [0.2, 0.7, 0.2, 1] }}
       style={{ transformOrigin: `${x}px ${y}px` }}
     >
-      {/* tail pointing from bubble bottom down to the arm tip */}
+      {/* tail */}
       <path
-        d={`M ${x - 5} ${bubbleY + h - 1} L ${x} ${y - 2} L ${x + 5} ${bubbleY + h - 1} Z`}
+        d={`M ${x - 6} ${bubbleY + H - 1} L ${x} ${y - 4} L ${x + 6} ${bubbleY + H - 1} Z`}
         fill="rgba(255,255,255,0.96)"
         stroke="rgba(7,21,35,0.5)"
-        strokeWidth={0.6}
+        strokeWidth={0.7}
       />
-      {/* bubble body */}
-      <rect
-        x={bubbleX}
-        y={bubbleY}
-        rx={cornerR}
-        ry={cornerR}
-        width={w}
-        height={h}
-        fill="rgba(255,255,255,0.96)"
-        stroke="rgba(7,21,35,0.55)"
-        strokeWidth={0.8}
-      />
-      {tone === "thinking" ? (
-        <g>
-          {/* Three pulsing dots */}
-          {[0, 1, 2].map((i) => (
-            <motion.circle
-              key={i}
-              cx={bubbleX + w / 2 + (i - 1) * 7}
-              cy={bubbleY + h / 2}
-              r={2.4}
-              fill="#0A1626"
-              animate={{ opacity: [0.3, 1, 0.3] }}
-              transition={{ duration: 1.1, repeat: Infinity, delay: i * 0.18 }}
-            />
-          ))}
-        </g>
-      ) : (
-        <text
-          x={bubbleX + w / 2}
-          y={bubbleY + h / 2 + 0.5}
-          textAnchor="middle"
-          dominantBaseline="middle"
-          fontFamily="Space Grotesk, Inter, sans-serif"
-          fontWeight={500}
-          fontSize={12}
-          fill="#0A1626"
+      {/* bubble body via foreignObject = real text wrap */}
+      <foreignObject x={bubbleX} y={bubbleY} width={W} height={H}>
+        <div
+          xmlns="http://www.w3.org/1999/xhtml"
+          style={{
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: tone === "thinking" ? "0 8px" : "8px 12px",
+            borderRadius: 14,
+            background: "rgba(255,255,255,0.96)",
+            border: "1px solid rgba(7,21,35,0.55)",
+            color: "#0A1626",
+            fontFamily: "Space Grotesk, Inter, sans-serif",
+            fontSize: tone === "thinking" ? 14 : 11.5,
+            lineHeight: 1.35,
+            fontWeight: tone === "thinking" ? 700 : 500,
+            textAlign: tone === "thinking" ? "center" : "left",
+            overflow: "hidden",
+            wordBreak: "break-word",
+            boxSizing: "border-box",
+            boxShadow: "0 3px 10px rgba(0,0,0,0.18)",
+          }}
         >
-          {displayText}
-        </text>
-      )}
+          {tone === "thinking" ? (
+            <span style={{ display: "inline-flex", gap: 3 }}>
+              <span style={{
+                display: "inline-block",
+                width: 5,
+                height: 5,
+                borderRadius: 999,
+                background: "#0A1626",
+                animation: "speech-dot 1.1s ease-in-out infinite",
+                animationDelay: "0s",
+              }} />
+              <span style={{
+                display: "inline-block",
+                width: 5,
+                height: 5,
+                borderRadius: 999,
+                background: "#0A1626",
+                animation: "speech-dot 1.1s ease-in-out infinite",
+                animationDelay: "0.18s",
+              }} />
+              <span style={{
+                display: "inline-block",
+                width: 5,
+                height: 5,
+                borderRadius: 999,
+                background: "#0A1626",
+                animation: "speech-dot 1.1s ease-in-out infinite",
+                animationDelay: "0.36s",
+              }} />
+            </span>
+          ) : (
+            text
+          )}
+        </div>
+      </foreignObject>
     </motion.g>
   );
 }
@@ -642,11 +662,11 @@ export function SolasteridCanvas({
         <ReefBackground width={svgSize} height={680} alive />
       </div>
 
-      {/* ── Sunrise / brightness overlay ────────────────────
-         A warm radial glow centered above the creature that
-         brightens during "dawn → thinking → committee → sun"
-         and fades back during "dusk → idle". Tasteful, not
-         gradient-slop: a single soft warm wash.
+      {/* ── Sunrise / brightness wash ────────────────────
+         A full-width band that sweeps across the top of the
+         reef during dawn → thinking → committee → sun, then
+         fades during dusk → idle. Less "abduction beam,"
+         more "the lights are coming on."
          ──────────────────────────────────────────────────── */}
       <motion.div
         aria-hidden
@@ -655,20 +675,42 @@ export function SolasteridCanvas({
         transition={{ duration: 2.2, ease: "easeInOut" }}
         style={{
           background:
-            "radial-gradient(120% 95% at 50% -10%, rgba(255,231,176,0.45) 0%, rgba(143,255,230,0.18) 28%, rgba(143,255,230,0.04) 50%, rgba(0,0,0,0) 75%)",
+            "linear-gradient(180deg, " +
+            "rgba(255,210,164,0.55) 0%, " +
+            "rgba(255,180,170,0.32) 14%, " +
+            "rgba(200,176,232,0.20) 30%, " +
+            "rgba(143,255,230,0.14) 48%, " +
+            "rgba(143,255,230,0.04) 66%, " +
+            "rgba(0,0,0,0) 86%)",
           mixBlendMode: "screen",
         }}
       />
-
-      {/* Warm horizon line that fades in with brightness */}
+      {/* Side warmth — a soft pink-orange wash that paints the corners with dawn light */}
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        animate={{ opacity: Math.max(0, PHASE_BRIGHTNESS[roundPhase] - 0.15) }}
+        transition={{ duration: 2.2, ease: "easeInOut" }}
+        style={{
+          background:
+            "radial-gradient(140% 65% at 10% 0%, rgba(255,160,140,0.30), transparent 55%), " +
+            "radial-gradient(140% 65% at 90% 0%, rgba(255,205,150,0.30), transparent 55%)",
+          mixBlendMode: "screen",
+        }}
+      />
+      {/* Color band at the very top edge — looks like a real horizon */}
       <motion.div
         aria-hidden
         className="pointer-events-none absolute left-0 right-0"
         style={{
           top: 0,
-          height: 110,
+          height: 160,
           background:
-            "linear-gradient(180deg, rgba(255,201,168,0.4) 0%, rgba(143,255,230,0.12) 60%, rgba(143,255,230,0) 100%)",
+            "linear-gradient(180deg, " +
+            "rgba(255,196,150,0.55) 0%, " +
+            "rgba(255,150,170,0.32) 30%, " +
+            "rgba(180,180,255,0.18) 65%, " +
+            "rgba(143,255,230,0.0) 100%)",
         }}
         animate={{ opacity: Math.max(0, PHASE_BRIGHTNESS[roundPhase] - 0.1) }}
         transition={{ duration: 2.2, ease: "easeInOut" }}
@@ -1110,19 +1152,25 @@ export function SolasteridCanvas({
         </AnimatePresence>
       </div>
 
-      {/* Seed thought bubble — top-right of canvas, only during dawn/thinking */}
+      {/* Seed / context thought bubble — appears top-center during dawn/thinking */}
       <AnimatePresence>
         {seedThoughtText && (roundPhase === "dawn" || roundPhase === "thinking") && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.7, y: 6 }}
+            initial={{ opacity: 0, scale: 0.85, y: 6 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.85, y: -6 }}
+            exit={{ opacity: 0, scale: 0.92, y: -6 }}
             transition={{ duration: 0.5, ease: [0.2, 0.7, 0.2, 1] }}
-            className="absolute right-4 top-20 flex flex-col items-end"
-            style={{ maxWidth: 280, pointerEvents: "none", zIndex: 4 }}
+            className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center"
+            style={{
+              top: 84,
+              maxWidth: 340,
+              width: "min(86%, 340px)",
+              pointerEvents: "none",
+              zIndex: 4,
+            }}
           >
             <div
-              className="rounded-3xl px-4 py-3 text-[12px] leading-relaxed"
+              className="rounded-3xl px-4 py-3 text-[12.5px] leading-relaxed w-full"
               style={{
                 background: "rgba(255,255,255,0.94)",
                 color: "#0A1626",
@@ -1130,49 +1178,52 @@ export function SolasteridCanvas({
                 boxShadow: "0 6px 20px rgba(0,0,0,0.35)",
                 fontStyle: "italic",
                 textWrap: "pretty" as never,
+                textAlign: "center",
               }}
             >
               <div
                 className="eyebrow mb-1"
-                style={{ color: "#0A1626", opacity: 0.55, fontSize: 9.5 }}
+                style={{
+                  color: "#0A1626",
+                  opacity: 0.55,
+                  fontSize: 9.5,
+                  fontStyle: "normal",
+                }}
               >
-                thinking about the seed
+                thinking…
               </div>
               <div>{seedThoughtText}</div>
             </div>
-            {/* Trailing thought-dots toward the creature */}
-            <div
-              className="flex flex-col items-center gap-1 mt-1"
-              style={{ marginRight: 40 }}
-            >
+            {/* Thought trail descending toward the center of the creature */}
+            <div className="flex flex-col items-center gap-1 mt-1">
               <motion.span
-                animate={{ opacity: [0.4, 1, 0.4] }}
+                animate={{ opacity: [0.35, 1, 0.35] }}
                 transition={{ duration: 1.4, repeat: Infinity, delay: 0 }}
                 style={{
-                  width: 8,
-                  height: 8,
+                  width: 9,
+                  height: 9,
                   borderRadius: 999,
-                  background: "rgba(255,255,255,0.92)",
+                  background: "rgba(255,255,255,0.94)",
                   border: "1px solid rgba(7,21,35,0.4)",
                 }}
               />
               <motion.span
-                animate={{ opacity: [0.4, 1, 0.4] }}
-                transition={{ duration: 1.4, repeat: Infinity, delay: 0.3 }}
+                animate={{ opacity: [0.35, 1, 0.35] }}
+                transition={{ duration: 1.4, repeat: Infinity, delay: 0.25 }}
                 style={{
-                  width: 5,
-                  height: 5,
+                  width: 6,
+                  height: 6,
                   borderRadius: 999,
                   background: "rgba(255,255,255,0.85)",
                   border: "1px solid rgba(7,21,35,0.3)",
                 }}
               />
               <motion.span
-                animate={{ opacity: [0.4, 1, 0.4] }}
-                transition={{ duration: 1.4, repeat: Infinity, delay: 0.6 }}
+                animate={{ opacity: [0.35, 1, 0.35] }}
+                transition={{ duration: 1.4, repeat: Infinity, delay: 0.5 }}
                 style={{
-                  width: 3,
-                  height: 3,
+                  width: 4,
+                  height: 4,
                   borderRadius: 999,
                   background: "rgba(255,255,255,0.75)",
                 }}
