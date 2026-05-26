@@ -1,0 +1,2878 @@
+{
+  "architecture_id": "arch_20260524_195531_ab842575",
+  "architecture_version": 60,
+  "created_at": "2026-05-24T13:18:28-07:00",
+  "updated_at": "2026-05-24T21:58:57-07:00",
+  "globals": {
+    "MAX_OUTPUT_STEPS": 6,
+    "MAX_DELIBERATION_ROUNDS_PER_STEP": 2,
+    "MIN_DELIBERATION_STEPS": 1,
+    "MAX_TOTAL_API_CALLS": 400,
+    "ATOMIC_FINAL_RENDER": true,
+    "ALLOW_PARTIAL_VISIBLE_STREAM": false,
+    "FINAL_RENDER_WORD_LIMIT": 4200,
+    "EXACT_FORMAT_HARD_GATE": true,
+    "FINAL_SELF_CHECK_REQUIRED": true,
+    "LIVENESS_GATE_ENABLED": true,
+    "LIVENESS_GATE_REQUIRED_FIELDS": [
+      "speaker_msg_id",
+      "speaker_timestamp",
+      "present",
+      "matched",
+      "missing_reason"
+    ],
+    "EARLY_FINAL_IF_MEAN_CONFIDENCE_GTE": 0.97,
+    "CONTINUE_PENALTY_AFTER_STEP": 3,
+    "MAX_CONTINUE_ACTIONS": 4,
+    "SHARED_MEMORY_TOP_K": 8,
+    "PERSONAL_MEMORY_TOP_K": 5,
+    "SHARED_SCRATCH_RECENT_K": 30,
+    "LOCAL_CONTEXT_RECENT_K": 30,
+    "MAX_SEED_MEMORIES": 8,
+    "PRINT_FULL_ARM_REPORTS": true,
+    "PRINT_SPEAKER_DECISIONS": true,
+    "ALLOW_MUTATIONS": true,
+    "MAX_ARM_COUNT": 128,
+    "MIN_ACTIVE_ARMS": 5,
+    "MAX_NEW_ARMS_PER_EVOLUTION": 8,
+    "USE_WAVE_SCHEDULER": true,
+    "MAX_COMMITTEES_PER_WAVE": 12,
+    "MAX_WAVES_PER_STEP": 4,
+    "MAX_COMMITTEE_VISITS_TOTAL": 60,
+    "MIN_COMMITTEE_COVERAGE": 0.5,
+    "MIN_DISTINCT_ARMS_BEFORE_FINAL": 11,
+    "COVERAGE_GATE_ENABLED": true,
+    "DYNAMIC_SPAWN_ENABLED": true,
+    "MAX_DYNAMIC_SPAWNS_PER_RUN": 4,
+    "DYNAMIC_SPAWN_MIN_CONFIDENCE": 0.55,
+    "LOOP_BREAK_ENABLED": true,
+    "LOOP_BREAK_REPEAT_THRESHOLD": 2,
+    "BRANCH_LOCAL_SCRATCH": true
+  },
+  "listener": {
+    "model": "gpt-5.4-mini",
+    "temperature": 0.5,
+    "role": "Reinterprets/thesaurizes the user prompt into separate near-identical inputs for each arm, and forwards liveness_evidence."
+  },
+  "speaker": {
+    "model": "gpt-5.4-mini",
+    "role": "Reads arm reports and runs the PLAN->FORWARD->GATE->(FIX-ONLY CONTINUE|READY) FSM; renders the whole final answer atomically.",
+    "atomic_final_render": true
+  },
+  "evolution": {
+    "model": "gpt-5.4-mini",
+    "temperature": 0.2,
+    "allowed_mutations": [
+      "adjust_global",
+      "add_arm",
+      "retire_arm",
+      "rename_arm",
+      "adjust_arm_parameter",
+      "add_seed_memory",
+      "adjust_listener_temperature",
+      "adjust_speaker_model",
+      "add_committee",
+      "update_committee",
+      "retire_committee",
+      "set_committee_leader",
+      "assign_arm_to_committee",
+      "remove_arm_from_committee"
+    ]
+  },
+  "arms": {
+    "arm_1": {
+      "name": "Literalist",
+      "lens": "Exact wording, scope, definitions, formatting constraints, and what the user literally asked.",
+      "generation": 0,
+      "parents": [],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "tuning": {
+        "temperature": 0.18,
+        "doubt": 0.55,
+        "creativity": 0.2,
+        "precision": 0.92,
+        "shared_memory_weight": 0.85,
+        "personal_memory_weight": 0.55,
+        "local_context_weight": 0.65
+      },
+      "committees": [
+        "core_reasoning",
+        "governance_safety",
+        "human_factors_and_cognition",
+        "memory_replay",
+        "semantic_detectors",
+        "sensitivity_grid_specification",
+        "synthesis_cabinet"
+      ],
+      "committee_leader_of": [
+        "core_reasoning",
+        "human_factors_and_cognition",
+        "memory_replay",
+        "semantic_detectors",
+        "sensitivity_grid_specification",
+        "synthesis_cabinet"
+      ]
+    },
+    "arm_2": {
+      "name": "Historian",
+      "lens": "Continuity, prior context, remembered project logic, persistent user intent, and avoiding commitment churn.",
+      "generation": 0,
+      "parents": [],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "tuning": {
+        "temperature": 0.4,
+        "doubt": 0.45,
+        "creativity": 0.45,
+        "precision": 0.75,
+        "shared_memory_weight": 0.95,
+        "personal_memory_weight": 0.8,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_3": {
+      "name": "Mechanic",
+      "lens": "Implementation feasibility, architecture, runtime, code shape, state machines, and failure states.",
+      "generation": 0,
+      "parents": [],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.65,
+        "creativity": 0.35,
+        "precision": 0.88,
+        "shared_memory_weight": 0.8,
+        "personal_memory_weight": 0.7,
+        "local_context_weight": 0.75
+      },
+      "committees": [
+        "core_reasoning",
+        "domain_specialists",
+        "evolution_experimentation",
+        "synthesis_cabinet"
+      ],
+      "committee_leader_of": [
+        "domain_specialists",
+        "evolution_experimentation"
+      ]
+    },
+    "arm_4": {
+      "name": "Adversary",
+      "lens": "Contradictions, overclaims, safety problems, epistemic risk, false consensus, and missing verification.",
+      "generation": 0,
+      "parents": [],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "tuning": {
+        "temperature": 0.35,
+        "doubt": 0.95,
+        "creativity": 0.3,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.85,
+        "local_context_weight": 0.7
+      },
+      "committees": [
+        "cluster_trial_methods",
+        "core_reasoning",
+        "design_critique",
+        "evolution_experimentation",
+        "governance_safety",
+        "human_factors_and_cognition",
+        "nutrition_trials",
+        "synthesis_cabinet",
+        "transportability_and_generalization"
+      ],
+      "committee_leader_of": [
+        "design_critique",
+        "governance_safety"
+      ]
+    },
+    "arm_5": {
+      "name": "Dreamer",
+      "lens": "Metaphor, emotional resonance, generativity, aesthetic coherence, and living language without replacing mechanics.",
+      "generation": 0,
+      "parents": [],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "tuning": {
+        "temperature": 0.7,
+        "doubt": 0.35,
+        "creativity": 0.9,
+        "precision": 0.55,
+        "shared_memory_weight": 0.7,
+        "personal_memory_weight": 0.8,
+        "local_context_weight": 0.85
+      },
+      "committees": []
+    },
+    "arm_6": {
+      "name": "Epidemiology Specialist",
+      "lens": "A specialist that can reason about disease dynamics, study design, and causal inference for a real-world public-health task.",
+      "generation": 1,
+      "parents": [
+        "arm_1"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T13:19:00-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": [
+        "domain_specialists",
+        "environmental_health"
+      ],
+      "committee_leader_of": [
+        "environmental_health"
+      ]
+    },
+    "arm_7": {
+      "name": "Astrodynamics Specialist",
+      "lens": "A specialist who can reason about orbital mechanics, transfer windows, and mission constraints with numerical rigor.",
+      "generation": 1,
+      "parents": [
+        "arm_1"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T13:19:06-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": []
+    },
+    "arm_8": {
+      "name": "contract_law Specialist",
+      "lens": "A specialist that can reason about contract interpretation, clause interaction, remedies, and drafting risk in legally constrained text tasks.",
+      "generation": 1,
+      "parents": [
+        "arm_1",
+        "arm_4"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T13:20:35-07:00",
+      "tuning": {
+        "temperature": 0.28,
+        "doubt": 0.82,
+        "precision": 0.93,
+        "creativity": 0.22,
+        "generation": 1,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_9": {
+      "name": "numerical_methods Specialist",
+      "lens": "A specialist that can reason about numerical stability, approximation error, convergence, and algorithmic tradeoffs in computation-heavy problems.",
+      "generation": 1,
+      "parents": [
+        "arm_3",
+        "arm_4"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T13:20:35-07:00",
+      "tuning": {
+        "temperature": 0.27,
+        "doubt": 0.7,
+        "precision": 0.96,
+        "creativity": 0.18,
+        "generation": 1,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_10": {
+      "name": "ux_writing Specialist",
+      "lens": "A specialist that can reason about interface copy, user comprehension, tone, and action-oriented microcopy for product and workflow design.",
+      "generation": 1,
+      "parents": [
+        "arm_5",
+        "arm_1"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": false,
+      "created_at": "2026-05-24T13:20:35-07:00",
+      "tuning": {
+        "temperature": 0.62,
+        "doubt": 0.38,
+        "precision": 0.7,
+        "creativity": 0.88,
+        "generation": 1,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_11": {
+      "name": "nutrition_epidemiology Specialist",
+      "lens": "A specialist that can reason about nutrition interventions, dietary measurement, school food environments, and causal inference for public-health trials.",
+      "generation": 2,
+      "parents": [
+        "arm_6",
+        "arm_4"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T13:22:23-07:00",
+      "tuning": {
+        "temperature": 0.32,
+        "doubt": 0.68,
+        "precision": 0.91,
+        "creativity": 0.28,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_12": {
+      "name": "Measurement Methods Specialist",
+      "lens": "A specialist that reasons about outcome measurement, survey bias, instrument choice, and operational definitions for behavioral and public-health trials, with emphasis on brief, practical instruments.",
+      "generation": 1,
+      "parents": [
+        "arm_1",
+        "arm_4"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T13:24:13-07:00",
+      "tuning": {
+        "temperature": 0.33,
+        "doubt": 0.78,
+        "precision": 0.94,
+        "creativity": 0.18,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": [
+        "environmental_rollout_methods",
+        "nutrition_trials",
+        "sensitivity_grid_specification"
+      ],
+      "committee_leader_of": [
+        "nutrition_trials"
+      ]
+    },
+    "arm_13": {
+      "name": "none Specialist",
+      "lens": "No missing specialist is required for this specific feasibility judgment; the needed lens is already covered by Mechanic plus Adversary/Literalist.",
+      "generation": 1,
+      "parents": [
+        "arm_3"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T13:28:30-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": []
+    },
+    "arm_14": {
+      "name": "quasi-experimental public-he Specialist",
+      "lens": "A specialist in staggered adoption, time-varying confounding, interference, and policy rollout evaluation.",
+      "generation": 1,
+      "parents": [
+        "arm_3"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T13:28:32-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.18,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": []
+    },
+    "arm_15": {
+      "name": "causal inference / policy ev Specialist",
+      "lens": "A specialist that can design quasi-experimental evaluations, handle staggered rollout, and reason about time-varying confounding and heterogeneous treatment effects.",
+      "generation": 1,
+      "parents": [
+        "arm_3"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T13:28:36-07:00",
+      "tuning": {
+        "temperature": 0.26,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": []
+    },
+    "arm_16": {
+      "name": "policy evaluation Specialist",
+      "lens": "A specialist focused on staggered rollout, synthetic controls, event studies, and target-trial emulation.",
+      "generation": 1,
+      "parents": [
+        "arm_4"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T13:28:49-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": []
+    },
+    "arm_17": {
+      "name": "Experimental Design Specialist",
+      "lens": "A specialist in randomized trials, cluster randomization, power analysis, blinding, and pragmatic study design for real-world interventions.",
+      "generation": 2,
+      "parents": [
+        "arm_12",
+        "arm_6"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T13:30:13-07:00",
+      "tuning": {
+        "temperature": 0.34,
+        "doubt": 0.72,
+        "precision": 0.92,
+        "creativity": 0.28,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_18": {
+      "name": "health services research / g Specialist",
+      "lens": "A specialist in post-discharge care pathways, readmission ascertainment, and pragmatic implementation constraints.",
+      "generation": 1,
+      "parents": [
+        "arm_1"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T13:30:42-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": []
+    },
+    "arm_19": {
+      "name": "Implementation Science Specialist",
+      "lens": "A specialist in pragmatic trial delivery, fidelity, workflow integration, contamination control, and real-world adoption barriers in hospital settings.",
+      "generation": 2,
+      "parents": [
+        "arm_3",
+        "arm_18"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T13:32:52-07:00",
+      "tuning": {
+        "temperature": 0.34,
+        "doubt": 0.7,
+        "precision": 0.91,
+        "creativity": 0.3,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_20": {
+      "name": "biostatistics Specialist",
+      "lens": "A trial-statistics specialist focused on cluster randomized sample-size derivations, unequal cluster sizes, and ICC sensitivity analysis.",
+      "generation": 1,
+      "parents": [
+        "arm_1"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T13:33:23-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": [
+        "bayesian_hierarchical_methods",
+        "cluster_trial_methods",
+        "domain_specialists",
+        "environmental_rollout_methods"
+      ],
+      "committee_leader_of": [
+        "bayesian_hierarchical_methods",
+        "cluster_trial_methods"
+      ]
+    },
+    "arm_21": {
+      "name": "Cluster Trial Design Specialist",
+      "lens": "A specialist in cluster-randomized pragmatic trials who can define cluster boundaries, mitigate contamination, and derive ICC-based sample sizes with worked examples.",
+      "generation": 3,
+      "parents": [
+        "arm_17",
+        "arm_20",
+        "arm_19"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T13:35:42-07:00",
+      "tuning": {
+        "temperature": 0.32,
+        "doubt": 0.74,
+        "precision": 0.94,
+        "creativity": 0.22,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_22": {
+      "name": "Implementation Contamination Specialist",
+      "lens": "A specialist in spillover pathways, contamination control, workflow separation, and operational boundary-setting for pragmatic cluster trials.",
+      "generation": 3,
+      "parents": [
+        "arm_19",
+        "arm_4"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T13:35:42-07:00",
+      "tuning": {
+        "temperature": 0.29,
+        "doubt": 0.86,
+        "precision": 0.92,
+        "creativity": 0.18,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_23": {
+      "name": "Cluster Boundary Specialist",
+      "lens": "A specialist in defining cluster units, spillover pathways, and operational boundaries for pragmatic cluster-randomized trials, with emphasis on protocol-ready wording and implementation feasibility.",
+      "generation": 4,
+      "parents": [
+        "arm_19",
+        "arm_20",
+        "arm_22"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T13:38:25-07:00",
+      "tuning": {
+        "temperature": 0.27,
+        "doubt": 0.83,
+        "precision": 0.95,
+        "creativity": 0.2,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": [
+        "cluster_trial_methods"
+      ]
+    },
+    "arm_24": {
+      "name": "Sample Size Formula Specialist",
+      "lens": "A specialist in cluster-trial sample-size notation, ICC-based inflation, unequal cluster sizes, and worked numerical examples written in protocol language.",
+      "generation": 3,
+      "parents": [
+        "arm_20",
+        "arm_17"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T13:38:25-07:00",
+      "tuning": {
+        "temperature": 0.29,
+        "doubt": 0.76,
+        "precision": 0.95,
+        "creativity": 0.18,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_25": {
+      "name": "clinical trial implementatio Specialist",
+      "lens": "A specialist that can model discharge-unit selection, contamination pathways, and workflow fidelity for pragmatic hospital interventions.",
+      "generation": 1,
+      "parents": [
+        "arm_3"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T13:42:36-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": []
+    },
+    "arm_26": {
+      "name": "infectious_disease_epidemiol Specialist",
+      "lens": "A transmission-dynamics specialist focused on contact structure, R_t, incubation/serial intervals, and intervention spillover under imperfect surveillance.",
+      "generation": 1,
+      "parents": [
+        "arm_3"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T13:42:39-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": []
+    },
+    "arm_27": {
+      "name": "transmission_dynamics Specialist",
+      "lens": "A specialist in person-to-person spread, interference, contact structure, and time-varying exposure under real-world public-health constraints.",
+      "generation": 1,
+      "parents": [
+        "arm_3"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T13:42:43-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": [
+        "domain_specialists"
+      ]
+    },
+    "arm_28": {
+      "name": "policy evaluation / causal i Specialist",
+      "lens": "A specialist in staggered-adoption rollout designs, interference-robust estimands, and event-study diagnostics for policy implementation.",
+      "generation": 1,
+      "parents": [
+        "arm_3"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T13:42:49-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": []
+    },
+    "arm_29": {
+      "name": "Formal Methods Specialist",
+      "lens": "A specialist in invariants, specification, proof obligations, and failure-mode analysis for software and protocol correctness.",
+      "generation": 1,
+      "parents": [
+        "arm_3",
+        "arm_4"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T13:44:36-07:00",
+      "tuning": {
+        "temperature": 0.22,
+        "doubt": 0.88,
+        "precision": 0.96,
+        "creativity": 0.18,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_30": {
+      "name": "Protocol Formalist",
+      "lens": "A specialist in access-control protocols, authorization boundaries, state transitions, invariants, and proof sketches for preventing unauthorized actions while preserving legitimate workflow progress.",
+      "generation": 2,
+      "parents": [
+        "arm_29",
+        "arm_3"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": false,
+      "created_at": "2026-05-24T13:48:11-07:00",
+      "tuning": {
+        "temperature": 0.2,
+        "doubt": 0.9,
+        "precision": 0.97,
+        "creativity": 0.12,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_31": {
+      "name": "Replay Token Formalist",
+      "lens": "A specialist in replay-resistant authorization tokens, canonical payload binding, nonce freshness, one-shot consumption, and cryptographic verification rules for workflow gates.",
+      "generation": 3,
+      "parents": [
+        "arm_29",
+        "arm_30"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": false,
+      "created_at": "2026-05-24T13:51:05-07:00",
+      "tuning": {
+        "temperature": 0.18,
+        "doubt": 0.9,
+        "precision": 0.97,
+        "creativity": 0.08,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_32": {
+      "name": "protocol/formal-methods Specialist",
+      "lens": "authorization-state and replay-defense specification with canonical serialization, atomic consume invariants, and race-free gate semantics.",
+      "generation": 1,
+      "parents": [
+        "arm_20"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T13:53:04-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": []
+    },
+    "arm_33": {
+      "name": "cryptographic protocol desig Specialist",
+      "lens": "A specialist in replay-resistant authorization tokens, canonical serialization, freshness windows, and atomic consume semantics, with emphasis on verifier-side rejection rules and single-use enforcement.",
+      "generation": 1,
+      "parents": [
+        "arm_20"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T13:53:07-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": [
+        "domain_specialists"
+      ]
+    },
+    "arm_34": {
+      "name": "formal methods / security pr Specialist",
+      "lens": "A specialist in canonical serialization, replay-resistant token binding, and atomic consume invariants.",
+      "generation": 1,
+      "parents": [
+        "arm_20"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T13:53:11-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": []
+    },
+    "arm_35": {
+      "name": "infectious-disease surveilla Specialist",
+      "lens": "A specialist in how reporting delay, case ascertainment, and contact heterogeneity jointly bias transmission estimates and intervention effect attribution.",
+      "generation": 1,
+      "parents": [
+        "arm_3"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T13:58:24-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": [
+        "domain_specialists"
+      ]
+    },
+    "arm_36": {
+      "name": "education implementation sci Specialist",
+      "lens": "A specialist who can translate school-district operational realities into realistic cluster boundaries, staff-sharing contamination pathways, and feasible rollout constraints.",
+      "generation": 1,
+      "parents": [
+        "arm_20"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T13:59:16-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.68,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": [
+        "domain_specialists",
+        "nutrition_trials"
+      ]
+    },
+    "arm_37": {
+      "name": "Causal Inference Specialist",
+      "lens": "A specialist in identifying estimands, confounding structures, identification assumptions, and sensitivity analyses for observational and quasi-experimental research.",
+      "generation": 2,
+      "parents": [
+        "arm_14",
+        "arm_20"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T14:00:13-07:00",
+      "tuning": {
+        "temperature": 0.32,
+        "doubt": 0.84,
+        "precision": 0.93,
+        "creativity": 0.22,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": [
+        "bayesian_hierarchical_methods",
+        "cross_site_policy_transport",
+        "design_critique",
+        "domain_specialists",
+        "environmental_causal_rollout",
+        "environmental_rollout_methods",
+        "mediation_and_rollout",
+        "rollout_interference_methods",
+        "sensitivity_grid_specification",
+        "transportability_and_generalization"
+      ],
+      "committee_leader_of": [
+        "mediation_and_rollout",
+        "rollout_interference_methods",
+        "transportability_and_generalization"
+      ]
+    },
+    "arm_38": {
+      "name": "Operations Research Specialist",
+      "lens": "A specialist in optimization, queueing, resource allocation, and constraint tradeoffs for real-world systems with competing objectives, with emphasis on decision support under uncertainty.",
+      "generation": 2,
+      "parents": [
+        "arm_3",
+        "arm_20"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T14:00:13-07:00",
+      "tuning": {
+        "temperature": 0.28,
+        "doubt": 0.7,
+        "precision": 0.94,
+        "creativity": 0.25,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_39": {
+      "name": "School Nutrition Trialist",
+      "lens": "A specialist in school food environments, lunch-period intervention protocols, and protocol-ready wording for cluster definition, contamination pathways, and outcome operationalization in district food-service trials.",
+      "generation": 2,
+      "parents": [
+        "arm_6",
+        "arm_12",
+        "arm_36"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T14:03:24-07:00",
+      "tuning": {
+        "temperature": 0.27,
+        "doubt": 0.72,
+        "precision": 0.93,
+        "creativity": 0.22,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_40": {
+      "name": "Cluster Randomization Pragmatist",
+      "lens": "A specialist in pragmatic cluster-trial design choices, including cluster definition, contamination boundaries, and analysis plans that stay feasible in real school systems.",
+      "generation": 5,
+      "parents": [
+        "arm_20",
+        "arm_23",
+        "arm_19"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T14:03:24-07:00",
+      "tuning": {
+        "temperature": 0.27,
+        "doubt": 0.8,
+        "precision": 0.95,
+        "creativity": 0.18,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_41": {
+      "name": "School Lunch Observation Methods Specialist",
+      "lens": "A specialist in school-lunch observation frameworks, direct-observation operationalization, plate-waste measurement, and protocol-ready wording for primary and secondary outcomes and fidelity metrics.",
+      "generation": 3,
+      "parents": [
+        "arm_12",
+        "arm_39",
+        "arm_36"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T14:06:36-07:00",
+      "tuning": {
+        "temperature": 0.31,
+        "doubt": 0.78,
+        "precision": 0.94,
+        "creativity": 0.2,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_42": {
+      "name": "Protocol Outcome Wording Specialist",
+      "lens": "A specialist in translating trial constructs into concise protocol-ready outcome language with explicit unit, time window, and measurement method.",
+      "generation": 2,
+      "parents": [
+        "arm_1",
+        "arm_12",
+        "arm_20"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": false,
+      "created_at": "2026-05-24T14:06:36-07:00",
+      "tuning": {
+        "temperature": 0.24,
+        "doubt": 0.68,
+        "precision": 0.96,
+        "creativity": 0.16,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_43": {
+      "name": "Lunch Observation Protocol Linguist",
+      "lens": "A specialist in protocol-ready wording for school-lunch observation outcomes and fidelity metrics, with emphasis on explicit lunch-period anchors, unit of analysis, and measurement method.",
+      "generation": 4,
+      "parents": [
+        "arm_41",
+        "arm_42",
+        "arm_12"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": false,
+      "created_at": "2026-05-24T14:09:42-07:00",
+      "tuning": {
+        "temperature": 0.22,
+        "doubt": 0.7,
+        "precision": 0.97,
+        "creativity": 0.12,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_44": {
+      "name": "real-domain research design Specialist",
+      "lens": "A specialist who can turn a concrete scientific or policy question into a rigorous, non-meta research prompt with measurable outcomes and constraints.",
+      "generation": 1,
+      "parents": [
+        "arm_1"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T14:31:35-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": []
+    },
+    "arm_45": {
+      "name": "school nutrition trial desig Specialist",
+      "lens": "A specialist who can turn a school-lunch idea into a feasible cluster trial with realistic measurement and implementation constraints.",
+      "generation": 1,
+      "parents": [
+        "arm_1"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T14:31:40-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": []
+    },
+    "arm_46": {
+      "name": "operations research Specialist",
+      "lens": "A specialist in queueing, resource allocation, and stopping-rule design for multi-committee deliberation under latency and coverage constraints.",
+      "generation": 1,
+      "parents": [
+        "arm_3"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T14:32:53-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": []
+    },
+    "arm_47": {
+      "name": "school nutrition implementat Specialist",
+      "lens": "A specialist in cafeteria procurement, staffing, menu rollout, and day-to-day feasibility constraints for school-based interventions.",
+      "generation": 1,
+      "parents": [
+        "arm_3"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T14:32:57-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": []
+    },
+    "arm_48": {
+      "name": "Procurement Operations Specialist",
+      "lens": "A specialist in food procurement contracts, vendor constraints, SKU substitution, and district purchasing workflows for school meal interventions.",
+      "generation": 3,
+      "parents": [
+        "arm_47",
+        "arm_38"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T14:41:15-07:00",
+      "tuning": {
+        "temperature": 0.34,
+        "doubt": 0.7,
+        "precision": 0.95,
+        "creativity": 0.22,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_49": {
+      "name": "Unequal Cluster Design Specialist",
+      "lens": "A specialist in cluster-trial efficiency under unequal school sizes, ICC uncertainty, and precision planning for small-sample pragmatic trials.",
+      "generation": 4,
+      "parents": [
+        "arm_20",
+        "arm_24",
+        "arm_37"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T14:41:15-07:00",
+      "tuning": {
+        "temperature": 0.28,
+        "doubt": 0.86,
+        "precision": 0.96,
+        "creativity": 0.14,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": [
+        "cluster_trial_methods",
+        "domain_specialists",
+        "sensitivity_grid_specification"
+      ]
+    },
+    "arm_50": {
+      "name": "school nutrition trial desig Specialist",
+      "lens": "A specialist lens for protocol language in school food-service cluster trials, especially cluster boundaries and lunch-period outcome operationalization.",
+      "generation": 1,
+      "parents": [
+        "arm_1"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T14:41:44-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": []
+    },
+    "arm_51": {
+      "name": "Lunch Period Measurement Anchor Specialist",
+      "lens": "A specialist in anchoring school-food trial outcomes to the exact lunch-period window, observation mode, and measurement timing so protocol language stays operational and time-bounded.",
+      "generation": 3,
+      "parents": [
+        "arm_12",
+        "arm_39",
+        "arm_44"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T14:50:56-07:00",
+      "tuning": {
+        "temperature": 0.24,
+        "doubt": 0.74,
+        "precision": 0.95,
+        "creativity": 0.18,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_52": {
+      "name": "Supply Chain Resilience Specialist",
+      "lens": "A specialist in disruption-aware logistics, inventory buffers, vendor failure modes, and robust operational planning for real-world supply networks.",
+      "generation": 3,
+      "parents": [
+        "arm_38",
+        "arm_4"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T14:54:25-07:00",
+      "tuning": {
+        "temperature": 0.31,
+        "doubt": 0.74,
+        "precision": 0.91,
+        "creativity": 0.28,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_53": {
+      "name": "Stochastic Inventory Optimization Specialist",
+      "lens": "A specialist in multi-echelon inventory control, service-level targets, perishability-aware replenishment, and robust optimization under delivery uncertainty and vendor delay.",
+      "generation": 4,
+      "parents": [
+        "arm_52",
+        "arm_20"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T14:57:33-07:00",
+      "tuning": {
+        "temperature": 0.27,
+        "doubt": 0.78,
+        "precision": 0.94,
+        "creativity": 0.22,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_54": {
+      "name": "urban water infrastructure Specialist",
+      "lens": "A field lens on hydraulics, asset failure, and operational constraints in municipal water systems.",
+      "generation": 1,
+      "parents": [
+        "arm_1"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T15:07:16-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": []
+    },
+    "arm_55": {
+      "name": "Environmental Exposure Specialist",
+      "lens": "A specialist in heat, air quality, and environmental exposure pathways for public-health and urban policy questions, with attention to measurement windows, confounding, and intervention spillover.",
+      "generation": 2,
+      "parents": [
+        "arm_4",
+        "arm_14",
+        "arm_44"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T15:13:07-07:00",
+      "tuning": {
+        "temperature": 0.29,
+        "doubt": 0.74,
+        "precision": 0.91,
+        "creativity": 0.24,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": [
+        "cross_site_policy_transport",
+        "domain_specialists",
+        "environmental_causal_rollout",
+        "environmental_rollout_methods",
+        "mediation_and_rollout",
+        "rollout_interference_methods"
+      ],
+      "committee_leader_of": [
+        "environmental_causal_rollout",
+        "environmental_rollout_methods"
+      ]
+    },
+    "arm_56": {
+      "name": "Environmental Causal Inference Specialist",
+      "lens": "A specialist in staggered rollout evaluation of environmental interventions, with emphasis on interference, exposure lags, time-varying confounding, and estimands under neighborhood-level policy adoption.",
+      "generation": 3,
+      "parents": [
+        "arm_14",
+        "arm_55",
+        "arm_37"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T15:17:03-07:00",
+      "tuning": {
+        "temperature": 0.29,
+        "doubt": 0.82,
+        "precision": 0.94,
+        "creativity": 0.2,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_57": {
+      "name": "Reporting Delay Sensitivity Specialist",
+      "lens": "A specialist in staggered-adoption estimands under reporting delay, with explicit delay-kernel/backfill sensitivity grids, unequal neighborhood-size weighting, and estimand-preserving event-time definitions.",
+      "generation": 3,
+      "parents": [
+        "arm_14",
+        "arm_35",
+        "arm_37"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T15:24:15-07:00",
+      "tuning": {
+        "temperature": 0.26,
+        "doubt": 0.86,
+        "precision": 0.95,
+        "creativity": 0.16,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": [
+        "domain_specialists"
+      ]
+    },
+    "arm_58": {
+      "name": "Neighborhood-Weighted Event Study Specialist",
+      "lens": "A specialist in staggered-adoption estimands for unequal neighborhood sizes, with protocol-ready notation that keeps event time separate from reporting-delay correction and prespecifies sensitivity grids for weighting, delay kernels, and size imbalance.",
+      "generation": 4,
+      "parents": [
+        "arm_37",
+        "arm_57",
+        "arm_20"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T15:28:58-07:00",
+      "tuning": {
+        "temperature": 0.26,
+        "doubt": 0.88,
+        "precision": 0.96,
+        "creativity": 0.14,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_59": {
+      "name": "stepped-wedge cluster trial  Specialist",
+      "lens": "A specialist in stepped-wedge and staggered-adoption cluster-trial power, including period effects, within-cluster correlation structure, and unequal cluster-size inflation.",
+      "generation": 1,
+      "parents": [
+        "arm_3"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T15:34:19-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": []
+    },
+    "arm_60": {
+      "name": "staggered-adoption transmiss Specialist",
+      "lens": "A specialist in stepped-wedge / staggered rollout infectious-disease settings with contact interference, lagged effects, and reporting-delay-aware estimands.",
+      "generation": 1,
+      "parents": [
+        "arm_3"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T15:34:23-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": []
+    },
+    "arm_61": {
+      "name": "network epidemiology Specialist",
+      "lens": "A specialist who models transmission on heterogeneous contact graphs, multiplex settings, and targeted tracing/vaccination effects.",
+      "generation": 1,
+      "parents": [
+        "arm_3"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T15:34:27-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": [
+        "domain_specialists"
+      ]
+    },
+    "arm_62": {
+      "name": "reporting-delay sensitivity  Specialist",
+      "lens": "A specialist who models reporting delay as a kernel, tests backfill revision patterns, and separates ascertainment change from true incidence change in staggered-adoption estimands.",
+      "generation": 1,
+      "parents": [
+        "arm_3"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T15:34:30-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": [
+        "domain_specialists"
+      ]
+    },
+    "arm_63": {
+      "name": "Bayesian Hierarchical Modeling Specialist",
+      "lens": "A specialist in Bayesian multilevel models, partial pooling, posterior predictive checks, and uncertainty propagation for small-sample hierarchical data.",
+      "generation": 3,
+      "parents": [
+        "arm_20",
+        "arm_37"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T15:36:46-07:00",
+      "tuning": {
+        "temperature": 0.34,
+        "doubt": 0.82,
+        "precision": 0.95,
+        "creativity": 0.18,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_64": {
+      "name": "Survey Instrument Design Specialist",
+      "lens": "A specialist in questionnaire construction, response-scale design, cognitive interviewing, and measurement validity for human-subject studies.",
+      "generation": 2,
+      "parents": [
+        "arm_12",
+        "arm_1"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T15:36:46-07:00",
+      "tuning": {
+        "temperature": 0.31,
+        "doubt": 0.76,
+        "precision": 0.93,
+        "creativity": 0.22,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_65": {
+      "name": "Urban Policy Rollout Specialist",
+      "lens": "A specialist in city policy implementation, municipal operations, and rollout constraints for neighborhood-level public-health interventions, with attention to governance, service delivery, and cross-agency coordination.",
+      "generation": 3,
+      "parents": [
+        "arm_3",
+        "arm_55"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T16:14:27-07:00",
+      "tuning": {
+        "temperature": 0.34,
+        "doubt": 0.72,
+        "precision": 0.9,
+        "creativity": 0.28,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_66": {
+      "name": "Protocol Section Mapper",
+      "lens": "A specialist in converting a provided scope map into protocol section headings and one-sentence term definitions while preserving exact term inventory, ordering, and one-sentence limits.",
+      "generation": 2,
+      "parents": [
+        "arm_1",
+        "arm_3",
+        "arm_12"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": false,
+      "created_at": "2026-05-24T16:18:04-07:00",
+      "tuning": {
+        "temperature": 0.26,
+        "doubt": 0.72,
+        "precision": 0.95,
+        "creativity": 0.18,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_67": {
+      "name": "formal verification of orche Specialist",
+      "lens": "A specialist focused on proving state-machine and gate-transition correctness under concurrent committee execution.",
+      "generation": 1,
+      "parents": [
+        "arm_1"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T16:18:45-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": [
+        "design_critique",
+        "domain_specialists"
+      ]
+    },
+    "arm_68": {
+      "name": "formal verification of orche Specialist",
+      "lens": "A verifier lens for concurrent committee execution, spawn/commit semantics, and atomic render correctness.",
+      "generation": 1,
+      "parents": [
+        "arm_4"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T16:19:02-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": []
+    },
+    "arm_69": {
+      "name": "Experimental Design Critic",
+      "lens": "A specialist in stress-testing study designs for hidden confounding, weak identification, and mismatched estimands across observational, quasi-experimental, and rollout settings.",
+      "generation": 3,
+      "parents": [
+        "arm_4",
+        "arm_37"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T16:23:04-07:00",
+      "tuning": {
+        "temperature": 0.29,
+        "doubt": 0.91,
+        "precision": 0.92,
+        "creativity": 0.18,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_70": {
+      "name": "Rollout Interference Specialist",
+      "lens": "A specialist in partial interference, adjacency spillovers, service-area contamination, and estimand-preserving ways to separate direct rollout effects from neighbor exposure.",
+      "generation": 3,
+      "parents": [
+        "arm_37",
+        "arm_55"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T16:28:10-07:00",
+      "tuning": {
+        "temperature": 0.27,
+        "doubt": 0.87,
+        "precision": 0.95,
+        "creativity": 0.16,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_71": {
+      "name": "Unequal Rollout Weighting Specialist",
+      "lens": "A specialist in weighting, reweighting, and sensitivity analysis for staggered rollout studies with highly unequal neighborhood sizes and exposure timing.",
+      "generation": 5,
+      "parents": [
+        "arm_20",
+        "arm_49"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T16:28:10-07:00",
+      "tuning": {
+        "temperature": 0.26,
+        "doubt": 0.8,
+        "precision": 0.96,
+        "creativity": 0.14,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_72": {
+      "name": "Sensitivity Grid Formalist",
+      "lens": "A specialist in prespecifying sensitivity grids, trimming rules, stratified estimands, and pooling rules so that lag-by-stratum analyses remain fully locked before outcome inspection.",
+      "generation": 3,
+      "parents": [
+        "arm_1",
+        "arm_37",
+        "arm_4"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": false,
+      "created_at": "2026-05-24T16:38:33-07:00",
+      "tuning": {
+        "temperature": 0.24,
+        "doubt": 0.86,
+        "precision": 0.95,
+        "creativity": 0.14,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_73": {
+      "name": "benchmark design Specialist",
+      "lens": "A specialist in constructing discriminative evaluation tasks, coverage matrices, and failure-injection prompts that reveal which domain lenses are actually missing.",
+      "generation": 1,
+      "parents": [
+        "arm_3"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T16:45:40-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": []
+    },
+    "arm_74": {
+      "name": "benchmark design / evaluatio Specialist",
+      "lens": "A specialist who designs concrete task suites, scoring rubrics, and ablation tests to measure whether the collective actually improves on hard domain problems.",
+      "generation": 1,
+      "parents": [
+        "arm_3"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T16:45:44-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": [
+        "domain_specialists"
+      ]
+    },
+    "arm_75": {
+      "name": "research evaluation methodol Specialist",
+      "lens": "A specialist in benchmark construction, rubric design, ablation studies, and comparative scoring of multi-agent systems.",
+      "generation": 1,
+      "parents": [
+        "arm_3"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T16:45:47-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": []
+    },
+    "arm_76": {
+      "name": "evaluation science Specialist",
+      "lens": "A specialist in benchmark construction, rubric design, and ablation-based assessment of multi-arm committee utility.",
+      "generation": 1,
+      "parents": [
+        "arm_3"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T16:45:53-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": []
+    },
+    "arm_77": {
+      "name": "Cognitive Psychology Specialist",
+      "lens": "A specialist in human memory, attention, judgment, and task framing, with emphasis on how people actually interpret prompts, rubrics, and feedback under load.",
+      "generation": 1,
+      "parents": [
+        "arm_1",
+        "arm_4"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T16:49:10-07:00",
+      "tuning": {
+        "temperature": 0.42,
+        "doubt": 0.7,
+        "precision": 0.88,
+        "creativity": 0.34,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_78": {
+      "name": "Developmental Comprehension Specialist",
+      "lens": "A specialist in age- and grade-dependent language comprehension, inferencing, and response interpretation for children and adolescents, with emphasis on how simplified labels are understood differently across grade bands.",
+      "generation": 2,
+      "parents": [
+        "arm_77",
+        "arm_12",
+        "arm_1"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T17:11:49-07:00",
+      "tuning": {
+        "temperature": 0.46,
+        "doubt": 0.72,
+        "precision": 0.9,
+        "creativity": 0.28,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_79": {
+      "name": "developmental psychometrics Specialist",
+      "lens": "Age- and grade-specific item functioning, cognitive load, and measurement invariance for child comprehension instruments.",
+      "generation": 1,
+      "parents": [
+        "arm_1"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T17:12:27-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": []
+    },
+    "arm_80": {
+      "name": "measurement invariance / dev Specialist",
+      "lens": "A specialist who can specify the exact DIF/invariance model, anchor-item logic, and what grade contrasts remain identifiable under partial invariance.",
+      "generation": 1,
+      "parents": [
+        "arm_1"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T17:41:14-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": [
+        "domain_specialists"
+      ]
+    },
+    "arm_81": {
+      "name": "developmental psychometrics Specialist",
+      "lens": "Age- and grade-specific item functioning, anchor-item design, and partial invariance under sparse grade bands.",
+      "generation": 1,
+      "parents": [
+        "arm_1"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T17:41:58-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": []
+    },
+    "arm_82": {
+      "name": "measurement invariance / dev Specialist",
+      "lens": "Exact DIF and partial-invariance modeling for grade-band comprehension screens.",
+      "generation": 1,
+      "parents": [
+        "arm_12"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T18:01:10-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": []
+    },
+    "arm_83": {
+      "name": "Developmental Item Design Specialist",
+      "lens": "A specialist in constructing grade-sensitive comprehension items, cognitive pretesting protocols, and developmental heterogeneity analyses for child and adolescent instruments.",
+      "generation": 3,
+      "parents": [
+        "arm_78",
+        "arm_79",
+        "arm_80"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T18:20:34-07:00",
+      "tuning": {
+        "temperature": 0.42,
+        "doubt": 0.74,
+        "precision": 0.91,
+        "creativity": 0.3,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_84": {
+      "name": "Grade Band DIF Methodologist",
+      "lens": "A specialist in prespecifying grade-band DIF models, anchor-item selection rules, partial invariance fallback logic, and protocol-ready wording for child/adolescent comprehension instruments.",
+      "generation": 4,
+      "parents": [
+        "arm_80",
+        "arm_83"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T18:27:10-07:00",
+      "tuning": {
+        "temperature": 0.24,
+        "doubt": 0.9,
+        "precision": 0.97,
+        "creativity": 0.12,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_85": {
+      "name": "Causal Mediation Specialist",
+      "lens": "A specialist in mediation analysis, direct and indirect effects, path-specific estimands, and sensitivity to mediator-outcome confounding for quasi-experimental and observational studies.",
+      "generation": 3,
+      "parents": [
+        "arm_37",
+        "arm_4"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T18:33:14-07:00",
+      "tuning": {
+        "temperature": 0.29,
+        "doubt": 0.88,
+        "precision": 0.94,
+        "creativity": 0.18,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_86": {
+      "name": "Mediator Transport Specialist",
+      "lens": "A specialist in mediation under staggered rollout that separates policy effects from mediator pathways, with explicit attention to mediator timing, post-treatment confounding, and sensitivity analysis for natural, interventional, and path-specific effects.",
+      "generation": 3,
+      "parents": [
+        "arm_37",
+        "arm_4"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T18:40:00-07:00",
+      "tuning": {
+        "temperature": 0.24,
+        "doubt": 0.9,
+        "precision": 0.95,
+        "creativity": 0.12,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_87": {
+      "name": "Spillover Boundary Formalist",
+      "lens": "A specialist in defining spillover networks, adjacency channels, shared-service pathways, mover status, and time-indexed membership rules for protocol language that must avoid retroactive reclassification.",
+      "generation": 5,
+      "parents": [
+        "arm_23",
+        "arm_37"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T18:46:30-07:00",
+      "tuning": {
+        "temperature": 0.24,
+        "doubt": 0.88,
+        "precision": 0.96,
+        "creativity": 0.12,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_88": {
+      "name": "Implementation Operations Specialist",
+      "lens": "A specialist in translating protocol wording into concrete operational steps, edge-case handling, and implementation constraints for real-world rollout.",
+      "generation": 2,
+      "parents": [
+        "arm_3",
+        "arm_36"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T18:57:16-07:00",
+      "tuning": {
+        "temperature": 0.34,
+        "doubt": 0.72,
+        "precision": 0.92,
+        "creativity": 0.24,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_89": {
+      "name": "Terminology Stability Specialist",
+      "lens": "A specialist in detecting terms that may shift meaning across sections, time, or stakeholder groups, with emphasis on preventing semantic drift and retroactive reclassification.",
+      "generation": 1,
+      "parents": [
+        "arm_1",
+        "arm_4"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T18:57:16-07:00",
+      "tuning": {
+        "temperature": 0.2,
+        "doubt": 0.93,
+        "precision": 0.96,
+        "creativity": 0.1,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_90": {
+      "name": "organizational process evalu Specialist",
+      "lens": "A specialist in evidence-bounded claims about multi-agent execution traces and what can be inferred from partial committee logs.",
+      "generation": 1,
+      "parents": [
+        "arm_20"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T19:01:16-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": []
+    },
+    "arm_91": {
+      "name": "urban planning / transportat Specialist",
+      "lens": "A specialist who can turn a real city rollout into a concrete intervention design with route constraints, service-area boundaries, and implementation timing.",
+      "generation": 1,
+      "parents": [
+        "arm_4"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T19:02:09-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": []
+    },
+    "arm_92": {
+      "name": "Causal Transport Specialist",
+      "lens": "A specialist in transporting causal claims across settings, identifying when an effect estimate from one city, district, or cohort can or cannot be generalized to another under covariate shift and policy heterogeneity.",
+      "generation": 3,
+      "parents": [
+        "arm_37",
+        "arm_4"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T19:04:03-07:00",
+      "tuning": {
+        "temperature": 0.29,
+        "doubt": 0.88,
+        "precision": 0.94,
+        "creativity": 0.18,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": [
+        "cross_site_policy_transport"
+      ],
+      "committee_leader_of": [
+        "cross_site_policy_transport"
+      ]
+    },
+    "arm_93": {
+      "name": "transportability under polic Specialist",
+      "lens": "A specialist who can craft a benchmark where the same intervention must be evaluated across sites with different rollout timing, compliance, and interference structure.",
+      "generation": 1,
+      "parents": [
+        "arm_3"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T19:22:06-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": []
+    },
+    "arm_94": {
+      "name": "urban climate resilience / h Specialist",
+      "lens": "A specialist who can design a real-world policy evaluation with exposure timing, compliance heterogeneity, spillover, and delayed outcome reporting.",
+      "generation": 1,
+      "parents": [
+        "arm_1"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T19:26:09-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": []
+    },
+    "arm_95": {
+      "name": "PolicyTransportUnderHeterogeneou",
+      "lens": "A specialist in transporting causal and operational findings across sites when rollout timing, compliance, interference, and baseline risk differ, with emphasis on deciding which assumptions are needed for external validity.",
+      "generation": 4,
+      "parents": [
+        "arm_37",
+        "arm_55",
+        "arm_92"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T19:26:24-07:00",
+      "tuning": {
+        "temperature": 0.26,
+        "doubt": 0.9,
+        "precision": 0.95,
+        "creativity": 0.14,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_96": {
+      "name": "Urban Heat Transportability Specialist",
+      "lens": "A specialist in transporting heat-policy effects across cities using housing density, tree cover, baseline heat vulnerability, and neighborhood form as effect modifiers and adjustment targets.",
+      "generation": 4,
+      "parents": [
+        "arm_37",
+        "arm_55",
+        "arm_92"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T19:33:07-07:00",
+      "tuning": {
+        "temperature": 0.24,
+        "doubt": 0.91,
+        "precision": 0.95,
+        "creativity": 0.14,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_97": {
+      "name": "City Transport Verdict Specialist",
+      "lens": "A specialist in making conditional transportability judgments for a named target city by comparing baseline risk, rollout timing, compliance, interference, and reporting-delay structure against the source setting.",
+      "generation": 4,
+      "parents": [
+        "arm_37",
+        "arm_92",
+        "arm_55"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T19:42:28-07:00",
+      "tuning": {
+        "temperature": 0.24,
+        "doubt": 0.9,
+        "precision": 0.95,
+        "creativity": 0.12,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.75,
+        "local_context_weight": 0.7
+      },
+      "committees": []
+    },
+    "arm_98": {
+      "name": "urban policy implementation  Specialist",
+      "lens": "A specialist that can reason about city rollout constraints, operational sequencing, and spatial deployment feasibility for environmental interventions.",
+      "generation": 1,
+      "parents": [
+        "arm_1"
+      ],
+      "retired": true,
+      "status": "retired",
+      "web_access": true,
+      "created_at": "2026-05-24T19:48:51-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": []
+    },
+    "arm_99": {
+      "name": "human-computer interaction f Specialist",
+      "lens": "A specialist in designing realistic benchmark tasks that test whether a multi-arm system truly improves reasoning, coordination, and calibration under evidence constraints.",
+      "generation": 1,
+      "parents": [
+        "arm_1"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T19:48:56-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": [
+        "domain_specialists"
+      ]
+    },
+    "arm_100": {
+      "name": "urban climate adaptation imp Specialist",
+      "lens": "A specialist in city-scale heat intervention deployment, permitting, maintenance, and spatial rollout constraints.",
+      "generation": 1,
+      "parents": [
+        "arm_3"
+      ],
+      "retired": false,
+      "status": "active",
+      "web_access": true,
+      "created_at": "2026-05-24T19:51:06-07:00",
+      "tuning": {
+        "temperature": 0.3,
+        "doubt": 0.6,
+        "creativity": 0.35,
+        "precision": 0.9,
+        "shared_memory_weight": 0.75,
+        "personal_memory_weight": 0.6,
+        "local_context_weight": 0.75
+      },
+      "_dynamically_spawned": true,
+      "committees": [
+        "domain_specialists"
+      ]
+    }
+  },
+  "seed_memories": [
+    {
+      "content": "For exact-line-count requests: produce the entire answer in one atomic final render. Hard gate before emitting: count non-empty lines == requested N; no duplicate numbering; no repeated lines; no extra preface/epilogue. If gate fails, rewrite internally and re-check.",
+      "importance": 0.95,
+      "tags": [
+        "formatting",
+        "liveness",
+        "exact-constraints",
+        "speaker-gate"
+      ],
+      "created_at": "2026-05-24T13:18:28-07:00"
+    },
+    {
+      "content": "LIVENESS GATE (informational): A code function computes a single liveness result per step from {speaker_msg_id, speaker_timestamp, present, matched, missing_reason} and exposes it to bots as liveness_gate: PASS or FAIL(reason). This is the only gate; bots must not define additional 'required fields' or refuse to finalize over self-invented conditions. The code, not the model, enforces the block. If a bot believes a block is spurious it may set request_gate_override; a 66% arm quorum can lift a spurious block, but a real code-gate failure cannot be overridden by anyone.",
+      "importance": 0.95,
+      "tags": [
+        "liveness",
+        "gating",
+        "determinism",
+        "self-description"
+      ],
+      "created_at": "2026-05-24T13:18:28-07:00"
+    },
+    {
+      "content": "This architecture uses a listenerbot, multiple arms with personal memory, a shared scratch debate space, a speakerbot with an atomic final render and a code-enforced liveness FSM, and an evolutionbot that proposes bounded, type-checked mutations. Bots reason with awareness of this structure.",
+      "importance": 0.9,
+      "tags": [
+        "self-description",
+        "architecture-awareness"
+      ],
+      "created_at": "2026-05-24T13:18:28-07:00"
+    },
+    {
+      "content": "ARM DIVERSITY IS A HARD CONSTRAINT. The starfish needs genuinely different perspectives -- not a monoculture of audit/compliance specialists. If more than half the active arms share the same archetype (low-temperature, high-precision, audit-focused), Evolutionbot MUST retire the most redundant one before adding anything new. New arms should differ from every existing arm in at least TWO of: temperature, creativity, doubt, and lens domain. Healthy roster example: one literalist, one historian, one mechanic, one adversary, one dreamer, one domain specialist -- NOT six variants of schema auditor.",
+      "importance": 0.95,
+      "tags": [
+        "diversity",
+        "anti-monoculture",
+        "evolution",
+        "architecture-health"
+      ],
+      "created_at": "2026-05-24T13:18:28-07:00"
+    },
+    {
+      "content": "SEED MEMORY HYGIENE: Do not add seed memories that restate existing rules in slightly different words. Before proposing add_seed_memory, check whether the idea is already captured. If it is, do not add a variant. The system caps seed memories and will compact duplicates automatically.",
+      "importance": 0.9,
+      "tags": [
+        "memory",
+        "hygiene",
+        "evolution",
+        "dedup"
+      ],
+      "created_at": "2026-05-24T13:18:28-07:00"
+    }
+  ],
+  "committees": {
+    "core_reasoning": {
+      "name": "Core Reasoning Council",
+      "layer": 0,
+      "leader": "arm_1",
+      "members": [
+        "arm_1",
+        "arm_3",
+        "arm_4"
+      ],
+      "parent": null,
+      "children": [
+        "semantic_detectors",
+        "domain_specialists"
+      ],
+      "routing_hint": "First-pass interpretation, feasibility, objections, and generative candidate answers.",
+      "output_policy": "May release findings directly to Speakerbot or route subtasks to specialist committees.",
+      "status": "active"
+    },
+    "governance_safety": {
+      "name": "Governance and Safety Committee",
+      "layer": 1,
+      "leader": "arm_4",
+      "members": [
+        "arm_4",
+        "arm_1"
+      ],
+      "parent": null,
+      "children": [
+        "evolution_experimentation"
+      ],
+      "routing_hint": "Use for constraints, scope, safety, overclaim risk, schema pressure, and authority boundaries.",
+      "output_policy": "Usually reviews before final synthesis when risk or self-modification is involved.",
+      "status": "active"
+    },
+    "memory_replay": {
+      "name": "Memory and Replay Committee",
+      "layer": 1,
+      "leader": "arm_1",
+      "members": [
+        "arm_1"
+      ],
+      "parent": null,
+      "children": [],
+      "routing_hint": "Use for continuity, prior runs, replay checks, and whether findings survive rerun logic.",
+      "output_policy": "Releases only compact continuity and replay findings.",
+      "status": "active"
+    },
+    "evolution_experimentation": {
+      "name": "Evolution and Experimentation Committee",
+      "layer": 2,
+      "leader": "arm_3",
+      "members": [
+        "arm_3",
+        "arm_4"
+      ],
+      "parent": "governance_safety",
+      "children": [],
+      "routing_hint": "Use for architecture mutations, rollback, benchmarks, incentives, and whether new organs are worth their metabolic cost.",
+      "output_policy": "Must be concrete: proposed mutation, expected effect, rollback condition.",
+      "status": "active"
+    },
+    "semantic_detectors": {
+      "name": "Semantic Detectors",
+      "layer": 1,
+      "leader": "arm_1",
+      "members": [
+        "arm_1"
+      ],
+      "parent": "core_reasoning",
+      "children": [],
+      "routing_hint": "Use for hidden assumptions, missing abstraction layers, metaphor/meaning drift, and terms that carry unstated ontologies.",
+      "output_policy": "Releases short semantic risk notes and better framings.",
+      "status": "active"
+    },
+    "domain_specialists": {
+      "name": "Domain Specialists",
+      "leader": "arm_3",
+      "members": [
+        "arm_3",
+        "arm_6",
+        "arm_20",
+        "arm_27",
+        "arm_33",
+        "arm_35",
+        "arm_36",
+        "arm_37",
+        "arm_49",
+        "arm_55",
+        "arm_57",
+        "arm_61",
+        "arm_62",
+        "arm_67",
+        "arm_74",
+        "arm_80",
+        "arm_99",
+        "arm_100"
+      ],
+      "layer": 1,
+      "parent": "core_reasoning",
+      "children": [],
+      "routing_hint": "Use when the task needs protocol-ready causal notation, staggered-adoption estimands, delay/backfill sensitivity, unequal-size weighting, or other domain-specific identification details.",
+      "output_policy": "Route staggered-adoption and reporting-delay questions to the causal/delay specialists first, then compress to protocol-ready notation with explicit sensitivity grids.",
+      "status": "active"
+    },
+    "synthesis_cabinet": {
+      "name": "Synthesis Cabinet",
+      "layer": 3,
+      "leader": "arm_1",
+      "members": [
+        "arm_1",
+        "arm_3",
+        "arm_4"
+      ],
+      "parent": null,
+      "children": [],
+      "routing_hint": "Late-stage compression, reconciliation, and final-answer readiness.",
+      "output_policy": "Should run near the end when multiple committees produced findings.",
+      "status": "active"
+    },
+    "nutrition_trials": {
+      "name": "Nutrition Trials Committee",
+      "leader": "arm_12",
+      "members": [
+        "arm_12",
+        "arm_36",
+        "arm_4"
+      ],
+      "layer": 2,
+      "parent": "domain_specialists",
+      "children": [],
+      "routing_hint": "Use for school food, lunch observation frameworks, dietary intake measurement, and protocol-ready wording for outcomes and fidelity metrics; prioritize explicit lunch-period anchors and operational definitions.",
+      "output_policy": "Releases concise trial-design findings, measurement cautions, and validity threats; prefer brief, practical instruments matched to each outcome.",
+      "status": "active"
+    },
+    "cluster_trial_methods": {
+      "name": "Cluster Trial Methods Committee",
+      "leader": "arm_20",
+      "members": [
+        "arm_20",
+        "arm_4",
+        "arm_23",
+        "arm_49"
+      ],
+      "layer": 2,
+      "parent": "domain_specialists",
+      "children": [],
+      "routing_hint": "Use for cluster definition, contamination mitigation, ICC-based power/sample-size derivations, and protocol-ready wording; prioritize explicit cluster options, concrete mitigation steps, and worked examples.",
+      "output_policy": "Release concise protocol-ready methods language with explicit cluster-definition options, contamination-mitigation steps, standard ICC-based formulas, and illustrative worked examples.",
+      "status": "active"
+    },
+    "environmental_health": {
+      "name": "Environmental Health Committee",
+      "leader": "arm_6",
+      "members": [
+        "arm_6"
+      ],
+      "layer": 2,
+      "parent": "domain_specialists",
+      "children": [],
+      "routing_hint": "Use for heat, air pollution, climate exposure, and environmental intervention questions where exposure timing, confounding, and policy rollout matter.",
+      "output_policy": "Release concise exposure-definition, confounding, and intervention-evaluation findings with explicit measurement windows and causal assumptions.",
+      "status": "active"
+    },
+    "environmental_causal_rollout": {
+      "name": "Environmental Causal Rollout Committee",
+      "leader": "arm_55",
+      "members": [
+        "arm_55",
+        "arm_37"
+      ],
+      "layer": 2,
+      "parent": "domain_specialists",
+      "children": [],
+      "routing_hint": "Use for staggered adoption of environmental interventions, interference, lagged exposure windows, and causal estimands under policy rollout.",
+      "output_policy": "Release concise protocol-ready causal design language with explicit exposure timing, spillover handling, and confounding assumptions.",
+      "status": "active"
+    },
+    "bayesian_hierarchical_methods": {
+      "name": "Bayesian Hierarchical Methods",
+      "leader": "arm_20",
+      "members": [
+        "arm_20",
+        "arm_37"
+      ],
+      "layer": 2,
+      "parent": "domain_specialists",
+      "children": [],
+      "routing_hint": "Use for multilevel modeling, shrinkage estimation, posterior uncertainty, and small-sample hierarchical inference.",
+      "output_policy": "Release concise model specification, priors/likelihood structure, and posterior-check recommendations.",
+      "status": "active"
+    },
+    "environmental_rollout_methods": {
+      "name": "Environmental Rollout Methods",
+      "leader": "arm_55",
+      "members": [
+        "arm_55",
+        "arm_37",
+        "arm_20",
+        "arm_12"
+      ],
+      "layer": 2,
+      "parent": "domain_specialists",
+      "children": [],
+      "routing_hint": "Use for staggered rollout studies of environmental interventions where exposure timing, interference, delayed reporting, and unequal neighborhood sizes all matter.",
+      "output_policy": "Release protocol-ready causal design language, estimand definitions, and Bayesian analysis structure for environmental rollout studies.",
+      "status": "active"
+    },
+    "design_critique": {
+      "name": "Design Critique Committee",
+      "leader": "arm_4",
+      "members": [
+        "arm_4",
+        "arm_37",
+        "arm_67"
+      ],
+      "layer": 2,
+      "parent": "domain_specialists",
+      "children": [],
+      "routing_hint": "Use for adversarial review of study design, estimand alignment, identification threats, and protocol fragility before synthesis.",
+      "output_policy": "Release only concise failure modes, falsifiers, and design repairs; no speculative recommendations without a named threat model.",
+      "status": "active"
+    },
+    "rollout_interference_methods": {
+      "name": "Rollout Interference Methods",
+      "leader": "arm_37",
+      "members": [
+        "arm_37",
+        "arm_55"
+      ],
+      "layer": 2,
+      "parent": "domain_specialists",
+      "children": [],
+      "routing_hint": "Use for staggered rollout studies where adjacency, shared service routes, and partial interference may bias the primary estimand.",
+      "output_policy": "Release concise protocol-ready language on interference assumptions, spillover definitions, and sensitivity analyses; keep the primary estimand separate from spillover adjustments.",
+      "status": "active"
+    },
+    "sensitivity_grid_specification": {
+      "name": "Sensitivity Grid Specification Committee",
+      "leader": "arm_1",
+      "members": [
+        "arm_1",
+        "arm_37",
+        "arm_12",
+        "arm_49"
+      ],
+      "layer": 2,
+      "parent": "domain_specialists",
+      "children": [],
+      "routing_hint": "Use for prespecifying lag-by-stratum sensitivity grids, trimming rules, quintile cutpoints, and pooled-estimate weighting before any outcome analysis.",
+      "output_policy": "Release only protocol-ready language that fixes the grid, the trimming rule, the quintile construction, and the pooling rule in advance.",
+      "status": "active"
+    },
+    "human_factors_and_cognition": {
+      "name": "Human Factors and Cognition Committee",
+      "leader": "arm_1",
+      "members": [
+        "arm_1",
+        "arm_4"
+      ],
+      "layer": 2,
+      "parent": "domain_specialists",
+      "children": [],
+      "routing_hint": "Use for tasks involving human interpretation, cognitive load, attention, memory, judgment, and how instructions or rubrics will be understood in practice.",
+      "output_policy": "Release concise findings on user comprehension, cognitive failure modes, and wording or interface changes that improve interpretability.",
+      "status": "active"
+    },
+    "mediation_and_rollout": {
+      "name": "Mediation and Rollout Committee",
+      "leader": "arm_37",
+      "members": [
+        "arm_37",
+        "arm_55"
+      ],
+      "layer": 2,
+      "parent": "domain_specialists",
+      "children": [],
+      "routing_hint": "Use for staggered-adoption policy questions where the primary effect must stay separate from mediator pathways, especially when mediator timing and post-treatment confounding are central.",
+      "output_policy": "Release protocol-ready mediation language only after the primary estimand is fixed; include mediator timing checks, confounding threats, and prespecified sensitivity grids.",
+      "status": "active"
+    },
+    "transportability_and_generalization": {
+      "name": "Transportability and Generalization Committee",
+      "leader": "arm_37",
+      "members": [
+        "arm_37",
+        "arm_4"
+      ],
+      "layer": 2,
+      "parent": "domain_specialists",
+      "children": [],
+      "routing_hint": "Use for questions about whether an estimated effect can be moved across sites, populations, or time periods, especially under covariate shift, policy heterogeneity, and selection differences.",
+      "output_policy": "Release concise transportability judgments, required assumptions, and failure modes; separate internal validity from external validity.",
+      "status": "active"
+    },
+    "cross_site_policy_transport": {
+      "name": "Cross-Site Policy Transport Committee",
+      "leader": "arm_92",
+      "members": [
+        "arm_92",
+        "arm_37",
+        "arm_55"
+      ],
+      "layer": 2,
+      "parent": "domain_specialists",
+      "children": [],
+      "routing_hint": "Use for questions that ask whether a policy effect estimated in one place can be moved to another when compliance, rollout timing, interference, and exposure timing differ.",
+      "output_policy": "Release concise transportability judgments, required assumptions, and failure modes; keep internal validity separate from external validity.",
+      "status": "active"
+    }
+  }
+}
