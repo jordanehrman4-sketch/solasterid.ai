@@ -1,41 +1,180 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { organicArmPath } from "../lib/organicGeometry";
 
 type Props = { onApiKeyReady: (key: string) => void };
 
-// Tiny animated star/starfish SVG for the gate
-function StarfishLogo() {
+const DEMO_PALETTE = [
+  "#F5A3A3", "#FFE3A6", "#A8E6B2", "#C8B0E8", "#F5C9A8",
+  "#B0D8E8", "#E8B0CC", "#F5B894",
+];
+
+/**
+ * A miniature starfish that loops through a growth animation:
+ *   r=0 → 3 → 5 → 7 → reset.
+ * Slowly rotates throughout.
+ */
+function GrowingStarfish() {
+  const size = 240;
+  const cx = size / 2;
+  const cy = size / 2;
+  const bodyRadius = 22;
+  const armLength = 78;
+  const TOTAL = 8;
+  const PHASE_DURATION = 1500; // ms per growth phase
+  const phases = [3, 5, 7, TOTAL]; // # arms visible at each step
+
+  const [phaseIndex, setPhaseIndex] = useState(0);
+
+  useEffect(() => {
+    const iv = window.setInterval(() => {
+      setPhaseIndex((p) => (p + 1) % phases.length);
+    }, PHASE_DURATION);
+    return () => window.clearInterval(iv);
+  }, []);
+
+  // Pre-compute arm geometry for all 8 slots (top-centered, evenly spaced)
+  const armSlots = Array.from({ length: TOTAL }, (_, i) => {
+    const angle = (i / TOTAL) * Math.PI * 2 - Math.PI / 2;
+    const len = armLength * (0.88 + ((i % 3) - 1) * 0.05);
+    const geo = organicArmPath({
+      cx,
+      cy,
+      angle,
+      baseRadius: bodyRadius - 4,
+      length: len,
+      curvature: Math.sin(angle * 2.4) * 0.45,
+      baseWidth: 11,
+      tipWidth: 1.6,
+    });
+    return { i, angle, len, geo, color: DEMO_PALETTE[i % DEMO_PALETTE.length] };
+  });
+
+  // Papulae dots
+  const papulae = Array.from({ length: 18 }, (_, i) => {
+    const a = (i / 18) * Math.PI * 2;
+    return {
+      x: cx + Math.cos(a) * bodyRadius * 0.86,
+      y: cy + Math.sin(a) * bodyRadius * 0.86,
+      r: 1 + (i % 2 === 0 ? 0.3 : 0),
+    };
+  });
+
+  const targetArmCount = phases[phaseIndex];
+
   return (
-    <motion.svg viewBox="0 0 80 80" width="80" height="80" className="mx-auto mb-6">
-      {[0, 1, 2, 3, 4].map((i) => {
-        const angle = (i / 5) * Math.PI * 2 - Math.PI / 2;
-        const x2 = 40 + Math.cos(angle) * 32;
-        const y2 = 40 + Math.sin(angle) * 32;
-        const cpx = 40 + Math.cos(angle) * 16 + Math.cos(angle + 1.2) * 8;
-        const cpy = 40 + Math.sin(angle) * 16 + Math.sin(angle + 1.2) * 8;
-        const colors = ["#7dd3fc", "#5eead4", "#f0abfc", "#fb7185", "#fde68a"];
-        return (
-          <motion.path
-            key={i}
-            d={`M 40 40 Q ${cpx} ${cpy} ${x2} ${y2}`}
-            stroke={colors[i]}
-            strokeWidth="7"
-            strokeLinecap="round"
-            fill="none"
-            animate={{ strokeOpacity: [0.6, 1, 0.6] }}
-            transition={{ duration: 2.2, repeat: Infinity, delay: i * 0.18, ease: "easeInOut" }}
-          />
-        );
-      })}
+    <motion.svg
+      viewBox={`0 0 ${size} ${size}`}
+      width={size}
+      height={size}
+      className="mx-auto mb-2"
+      animate={{ rotate: 360 }}
+      transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
+      style={{ transformOrigin: `${cx}px ${cy}px` }}
+    >
+      <defs>
+        <radialGradient id="gateBodyGrad" cx="40%" cy="38%" r="72%">
+          <stop offset="0%" stopColor="#D38667" />
+          <stop offset="55%" stopColor="#A35234" />
+          <stop offset="100%" stopColor="#5E2613" />
+        </radialGradient>
+        <radialGradient id="gateAura" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="rgba(143,255,230,0.45)" />
+          <stop offset="55%" stopColor="rgba(100,245,230,0.18)" />
+          <stop offset="100%" stopColor="rgba(143,255,230,0)" />
+        </radialGradient>
+        <filter id="gateSoftGlow" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="2" result="b" />
+          <feMerge>
+            <feMergeNode in="b" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+
+      {/* Aura */}
       <motion.circle
-        cx="40" cy="40" r="12"
-        fill="#0a1628"
-        stroke="#0d9488"
-        strokeWidth="2.5"
-        animate={{ r: [11, 14, 11] }}
-        transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+        cx={cx}
+        cy={cy}
+        r={bodyRadius * 4}
+        fill="url(#gateAura)"
+        animate={{ opacity: [0.35, 0.6, 0.35] }}
+        transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
       />
-      <text x="40" y="43" textAnchor="middle" fill="#67e8f9" fontSize="7" fontWeight="bold">spkr</text>
+
+      {/* Arms */}
+      <AnimatePresence>
+        {armSlots.map((slot) => {
+          const visible = slot.i < targetArmCount;
+          return (
+            <motion.g
+              key={slot.i}
+              initial={{ opacity: 0, scale: 0.3 }}
+              animate={
+                visible
+                  ? { opacity: 1, scale: 1 }
+                  : { opacity: 0, scale: 0.3 }
+              }
+              transition={{
+                duration: 0.55,
+                delay: visible ? slot.i * 0.08 : 0,
+                ease: [0.2, 0.7, 0.2, 1],
+              }}
+              style={{ transformOrigin: `${cx}px ${cy}px` }}
+            >
+              <path
+                d={slot.geo.ribbon}
+                fill={slot.color}
+                stroke="rgba(0,0,0,0.25)"
+                strokeWidth={0.4}
+              />
+              <path
+                d={slot.geo.center}
+                fill="none"
+                stroke="rgba(255,255,255,0.5)"
+                strokeWidth={0.7}
+                opacity={0.5}
+              />
+              <circle
+                cx={slot.geo.tip.x}
+                cy={slot.geo.tip.y}
+                r={1.6}
+                fill="#FFFFFF"
+                filter="url(#gateSoftGlow)"
+              />
+            </motion.g>
+          );
+        })}
+      </AnimatePresence>
+
+      {/* Body */}
+      <circle
+        cx={cx}
+        cy={cy}
+        r={bodyRadius}
+        fill="url(#gateBodyGrad)"
+        stroke="#5A2A1A"
+        strokeWidth={1}
+      />
+      <ellipse
+        cx={cx - bodyRadius * 0.35}
+        cy={cy - bodyRadius * 0.4}
+        rx={bodyRadius * 0.45}
+        ry={bodyRadius * 0.28}
+        fill="rgba(255,220,180,0.2)"
+      />
+      {papulae.map((p, i) => (
+        <circle key={i} cx={p.x} cy={p.y} r={p.r} fill="#FFC788" opacity={0.85} />
+      ))}
+      {/* Mouth */}
+      <circle cx={cx} cy={cy} r={bodyRadius * 0.22} fill="#0A0608" />
+      <circle
+        cx={cx - bodyRadius * 0.06}
+        cy={cy - bodyRadius * 0.06}
+        r={bodyRadius * 0.04}
+        fill="#FFFFFF"
+        opacity={0.4}
+      />
     </motion.svg>
   );
 }
@@ -52,56 +191,65 @@ export function ApiKeyGate({ onApiKeyReady }: Props) {
   }
 
   return (
-    <div
-      className="flex min-h-screen flex-col items-center justify-center p-6"
-      style={{
-        background: "linear-gradient(180deg, #050d1a 0%, #061428 50%, #0a1410 100%)",
-      }}
-    >
+    <div className="flex min-h-screen flex-col items-center justify-center p-6">
       {/* Floating bubbles in background */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        {Array.from({ length: 10 }, (_, i) => (
+        {Array.from({ length: 12 }, (_, i) => (
           <motion.div
             key={i}
-            className="absolute rounded-full border border-cyan-300/20"
+            className="absolute rounded-full"
             style={{
-              left: (8 + i * 9) + "%",
+              left: (6 + i * 8) + "%",
               bottom: "-20px",
               width: 4 + (i % 5) * 3,
               height: 4 + (i % 5) * 3,
-              background: "radial-gradient(circle at 30% 30%, rgba(103,232,249,0.2), transparent)",
+              background:
+                "radial-gradient(circle at 30% 30%, rgba(168,255,235,0.45), rgba(168,255,235,0.05) 65%, transparent)",
             }}
-            animate={{ y: [0, -window.innerHeight * 0.95], opacity: [0.5, 0] }}
-            transition={{ duration: 8 + i * 1.5, delay: i * 0.9, repeat: Infinity, ease: "linear" }}
+            animate={{ y: [0, -window.innerHeight * 0.95], opacity: [0.55, 0] }}
+            transition={{
+              duration: 10 + i * 1.4,
+              delay: i * 0.8,
+              repeat: Infinity,
+              ease: "linear",
+            }}
           />
         ))}
       </div>
 
       <motion.div
-        initial={{ opacity: 0, y: 24 }}
+        initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7 }}
-        className="glass-panel relative w-full max-w-md p-8 slide-in"
-        style={{ border: "1px solid rgba(103,232,249,0.2)", boxShadow: "0 0 60px rgba(13,148,136,0.15)" }}
+        className="glass-panel glass-panel--strong relative w-full max-w-md p-8"
+        style={{ borderColor: "rgba(143,255,230,0.22)" }}
       >
-        <StarfishLogo />
+        <GrowingStarfish />
 
-        <h1 className="text-center text-3xl font-bold text-glow-teal text-cyan-100 tracking-wide">
+        <h1
+          className="text-center font-display font-semibold tracking-tight"
+          style={{
+            fontSize: 28,
+            color: "var(--text-strong)",
+            letterSpacing: "-0.01em",
+          }}
+        >
           Solasterid Studio
         </h1>
 
-        <p className="mt-3 text-center text-sm text-slate-400 leading-relaxed">
-          Grow your Solasterid for your purpose.<br />
-          Tune the seed while it swims.<br />
-          If it survives 25 rounds, you get to take it home.
+        <p
+          className="mt-2 text-center text-[13.5px] leading-relaxed"
+          style={{ color: "var(--text-soft)" }}
+        >
+          Grow a starfish that thinks for you.
+          <br />
+          Survive 25 rounds and take it home.
         </p>
 
-        <div className="mt-5 rounded-xl bg-slate-950/70 border border-cyan-300/10 p-3 text-xs text-slate-400 text-center leading-relaxed">
-          Your key is used only for this session and is never stored by this app.<br />
-          <span className="text-cyan-600 italic">The creature's fossil is saved. The user's API key is not.</span>
-        </div>
-
-        <label className="mt-6 block text-sm font-medium text-slate-300">
+        <label
+          className="mt-7 block text-[12px] font-display"
+          style={{ color: "var(--text)", letterSpacing: "0.04em" }}
+        >
           OpenAI API key
           <div className="relative mt-2">
             <input
@@ -109,8 +257,15 @@ export function ApiKeyGate({ onApiKeyReady }: Props) {
               value={draftKey}
               onChange={(e) => setDraftKey(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && submit()}
-              placeholder="sk-..."
-              className="w-full rounded-xl border border-cyan-200/15 bg-slate-950 px-4 py-3 text-slate-100 outline-none transition-all focus:border-cyan-400/50 focus:shadow-[0_0_12px_rgba(103,232,249,0.2)]"
+              placeholder="sk-…"
+              className="w-full rounded-2xl px-4 py-3 outline-none transition-all"
+              style={{
+                background: "rgba(7,21,35,0.7)",
+                border: "1px solid rgba(143,255,230,0.16)",
+                color: "var(--text-strong)",
+                fontFamily: "JetBrains Mono, ui-monospace, monospace",
+                fontSize: 13,
+              }}
               autoComplete="off"
               autoCorrect="off"
               spellCheck={false}
@@ -118,7 +273,8 @@ export function ApiKeyGate({ onApiKeyReady }: Props) {
             <button
               type="button"
               onClick={() => setShowKey((v) => !v)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] eyebrow hover:text-[var(--text)]"
+              style={{ color: "var(--text-mute)" }}
               tabIndex={-1}
             >
               {showKey ? "hide" : "peek"}
@@ -127,18 +283,22 @@ export function ApiKeyGate({ onApiKeyReady }: Props) {
         </label>
 
         <motion.button
-          whileHover={{ scale: 1.02, boxShadow: "0 0 24px rgba(103,232,249,0.4)" }}
-          whileTap={{ scale: 0.97 }}
+          whileHover={{ y: -1 }}
+          whileTap={{ y: 1 }}
           onClick={submit}
           disabled={!draftKey.trim()}
-          className="mt-5 w-full rounded-xl py-3 font-bold text-slate-950 transition-all disabled:opacity-40"
-          style={{ background: "linear-gradient(135deg, #67e8f9, #0d9488)" }}
+          className="btn btn-primary mt-5 w-full"
+          style={{ padding: "12px 16px", fontSize: 14 }}
         >
-          Enter Studio
+          Enter the Reef
         </motion.button>
 
-        <p className="mt-4 text-center text-[10px] text-slate-600">
-          Key stays in RAM only. Never logged. Never exported. Never sent anywhere except the OpenAI API.
+        <p
+          className="mt-4 text-center text-[11px] leading-relaxed"
+          style={{ color: "var(--text-mute)" }}
+        >
+          Your key stays in this tab's RAM. Never logged, never exported,
+          never sent anywhere except the OpenAI API.
         </p>
       </motion.div>
     </div>
