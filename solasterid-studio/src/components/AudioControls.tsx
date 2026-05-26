@@ -56,6 +56,15 @@ export function AudioControls({ state }: Props) {
   const [rosesUserUrl, setRosesUserUrl] = useState<string | null>(null);
   const [meterPulse, setMeterPulse] = useState(false);
 
+  // Vite emits assets relative to `base` (see vite.config.ts). Files under
+  // /public/audio/ are served at `${base}audio/...`, so we have to prepend
+  // BASE_URL to absolute root paths — otherwise a subpath deploy (e.g.
+  // username.github.io/repo/) tries to fetch /audio/... from the org root
+  // and gets a 404.
+  const base = import.meta.env.BASE_URL || "./";
+  const ambienceUrl = `${base}audio/ocean-ambience.mp3`.replace(/\/+/g, "/");
+  const rosesUrl = `${base}audio/roses-imanbek-local.mp3`.replace(/\/+/g, "/");
+
   const ambienceRef = useRef<HTMLAudioElement | null>(null);
   const rosesRef = useRef<HTMLAudioElement | null>(null);
   const prevArmCount = useRef(0);
@@ -120,10 +129,10 @@ export function AudioControls({ state }: Props) {
 
   return (
     <section className="glass-panel" style={{ padding: 16 }}>
-      <audio ref={ambienceRef} src="/audio/ocean-ambience.mp3" preload="none" />
+      <audio ref={ambienceRef} src={ambienceUrl} preload="none" />
       <audio
         ref={rosesRef}
-        src={rosesUserUrl ?? "/audio/roses-imanbek-local.mp3"}
+        src={rosesUserUrl ?? rosesUrl}
         preload="none"
       />
 
