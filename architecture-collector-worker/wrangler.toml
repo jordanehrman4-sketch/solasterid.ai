@@ -1,0 +1,11 @@
+name = "solasterid-architecture-collector"
+main = "src/index.js"
+compatibility_date = "2024-09-23"
+
+[vars]
+# Change these before deploy.
+GITHUB_REPO = "jordanehrman4-sketch/solasterid.ai"
+GITHUB_BRANCH = "main"
+# Comma-separated origins allowed to POST. Use your real Pages/domain URLs.
+# Examples: "https://solasterid.ai,https://jordanehrman4-sketch.github.io"
+ALLOWED_ORIGINS = "*"

@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import type { SolasteridState } from "../lib/solasteridState";
 import { buildSolasteridExportZip, downloadBlob } from "../lib/exportSolasterid";
 import { saveExportRecord } from "../lib/indexedDbExports";
+import { submitArchitectureFossil } from "../lib/architectureCollector";
 import { ExportHistory } from "./ExportHistory";
 
 type Props = { state: SolasteridState };
@@ -20,13 +21,14 @@ export function ExportPanel({ state }: Props) {
       const blob = await buildSolasteridExportZip(state);
       const createdAt = new Date().toISOString();
       const activeArmCount = state.arms.filter((a) => a.status === "active").length;
+      const exportId = crypto.randomUUID();
       const filename = `solasterid_r${state.round}_${Date.now()}.zip`;
 
       downloadBlob(blob, filename);
 
       try {
         await saveExportRecord({
-          id: crypto.randomUUID(),
+          id: exportId,
           createdAt,
           name: filename,
           round: state.round,
@@ -41,7 +43,20 @@ export function ExportPanel({ state }: Props) {
         // IndexedDB unavailable
       }
 
-      setMessage("Fossil saved locally and downloaded.");
+      const collectorStatus = await submitArchitectureFossil(state, {
+        exportId,
+        createdAt,
+        filename,
+      });
+
+      if (collectorStatus.status === "submitted") {
+        setMessage("Fossil downloaded locally and copied to the architecture archive.");
+      } else if (collectorStatus.status === "skipped") {
+        setMessage("Fossil downloaded locally. Community architecture archive is not configured yet.");
+      } else {
+        setMessage("Fossil downloaded locally. Archive upload failed, but your export is safe.");
+        console.warn("Architecture archive upload failed:", collectorStatus.error);
+      }
       setTimeout(() => setMessage(null), 4000);
     } catch (err) {
       setMessage("Export failed: " + String(err));
