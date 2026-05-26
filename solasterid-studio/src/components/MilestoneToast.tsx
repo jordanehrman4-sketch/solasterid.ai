@@ -2,12 +2,12 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const MILESTONES: Record<number, { message: string; emoji: string; color: string }> = {
-  10: { message: "10 arms. The reef stirs.", emoji: "🌊", color: "#67e8f9" },
-  20: { message: "20 arms. Old Flash game energy.", emoji: "🎮", color: "#f0abfc" },
-  30: { message: "30 arms. Full cognitive reef rave.", emoji: "🪸", color: "#fb7185" },
-  50: { message: "50 arms. Capped. Powerful. Not physically illegal.", emoji: "🔱", color: "#fde68a" },
-  75: { message: "75 arms. The fossil record grows heavy.", emoji: "⚗️", color: "#c4b5fd" },
-  100: { message: "100 arms. It has become a reef.", emoji: "🌐", color: "#5eead4" },
+  10: { message: "10 arms. The reef stirs.", emoji: "🌊", color: "#8FFFE6" },
+  20: { message: "20 arms. Old Flash game energy.", emoji: "🎮", color: "#C8B0E8" },
+  30: { message: "30 arms. Full cognitive reef rave.", emoji: "🪸", color: "#F5A3A3" },
+  50: { message: "50 arms. Capped. Powerful. Not physically illegal.", emoji: "🔱", color: "#FFE3A6" },
+  75: { message: "75 arms. The fossil record grows heavy.", emoji: "⚗️", color: "#B0D8E8" },
+  100: { message: "100 arms. It has become a reef.", emoji: "🌐", color: "#A8E6B2" },
 };
 
 type Props = { activeArmCount: number };
@@ -45,12 +45,15 @@ export function MilestoneToast({ activeArmCount }: Props) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -12, scale: 0.9 }}
               transition={{ duration: 0.4, ease: "easeOut" }}
-              className="rounded-2xl px-5 py-3 text-sm font-bold shadow-2xl"
+              className="rounded-2xl px-5 py-3 text-[13.5px] font-display font-semibold shadow-2xl"
               style={{
-                background: `linear-gradient(135deg, rgba(5,13,26,0.95), rgba(10,22,40,0.95))`,
-                border: `1px solid ${m.color}40`,
+                background: "rgba(11,23,38,0.92)",
+                border: `1.5px solid ${m.color}55`,
                 color: m.color,
-                boxShadow: `0 0 40px ${m.color}30`,
+                boxShadow: `0 8px 28px rgba(0,0,0,0.45), 0 0 28px ${m.color}24`,
+                backdropFilter: "blur(14px)",
+                WebkitBackdropFilter: "blur(14px)",
+                letterSpacing: "0.01em",
               }}
             >
               {m.emoji} {m.message}

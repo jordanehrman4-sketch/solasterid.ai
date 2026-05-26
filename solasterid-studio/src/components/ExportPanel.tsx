@@ -38,7 +38,7 @@ export function ExportPanel({ state }: Props) {
           zipBlob: blob,
         });
       } catch {
-        // IndexedDB may be unavailable
+        // IndexedDB unavailable
       }
 
       setMessage("Fossil saved locally and downloaded.");
@@ -51,47 +51,58 @@ export function ExportPanel({ state }: Props) {
   }
 
   return (
-    <section className="glass-panel p-4" style={{ borderColor: "rgba(251,191,36,0.2)" }}>
-      <h2 className="text-sm font-bold text-amber-200 tracking-wide">EXPORT FOSSIL</h2>
+    <section className="glass-panel" style={{ padding: 16, borderColor: "rgba(255,209,102,0.18)" }}>
+      <div className="eyebrow">Export Fossil</div>
 
       {!state.exportUnlocked ? (
         <div className="mt-3">
-          <p className="text-xs text-slate-400 leading-relaxed">
+          <p className="text-[11.5px] leading-relaxed" style={{ color: "var(--text-soft)" }}>
             The fossil lock holds until round 25.
           </p>
           <div className="mt-3 flex items-center gap-3">
-            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-800">
+            <div className="progress-track flex-1">
               <motion.div
-                className="h-full rounded-full"
-                style={{ background: "linear-gradient(90deg, #fbbf24, #f97316)", width: ((state.round / 25) * 100) + "%" }}
+                className="progress-fill progress-fill--plankton"
                 animate={{ width: ((state.round / 25) * 100) + "%" }}
                 transition={{ duration: 0.6 }}
               />
             </div>
-            <span className="text-[10px] font-mono text-amber-400">{roundsLeft}r left</span>
+            <span className="text-[10.5px] mono" style={{ color: "var(--plankton)" }}>
+              {roundsLeft}r left
+            </span>
           </div>
-          <p className="mt-2 text-[10px] text-slate-600 italic">
+          <p className="mt-2 text-[10.5px] italic" style={{ color: "var(--text-mute)" }}>
             Survive 25 rounds to export your Solasterid.
           </p>
         </div>
       ) : (
         <>
-          <p className="mt-2 text-xs text-slate-400 leading-relaxed">
+          <p className="mt-2 text-[12px] leading-relaxed" style={{ color: "var(--text)" }}>
             Your Solasterid has survived {state.round} rounds.
           </p>
-          <p className="mt-1 text-[11px] text-amber-400/80 italic">
+          <p
+            className="mt-1 text-[11px] italic"
+            style={{ color: "rgba(255,209,102,0.85)" }}
+          >
             The creature's fossil is saved. The user's API key is not.
           </p>
 
           <motion.button
-            whileHover={{ scale: 1.02, boxShadow: "0 0 20px rgba(251,191,36,0.3)" }}
-            whileTap={{ scale: 0.97 }}
+            whileHover={{ y: -1 }}
+            whileTap={{ y: 1 }}
             onClick={exportNow}
             disabled={exporting}
-            className="mt-3 w-full rounded-xl py-2.5 text-sm font-bold text-slate-950 transition-all disabled:opacity-50"
-            style={{ background: "linear-gradient(135deg, #fbbf24, #f97316)" }}
+            className="btn mt-3 w-full"
+            style={{
+              background: "linear-gradient(135deg, #FFD166, #FF9A76)",
+              color: "#2A1B07",
+              border: "1px solid rgba(255,209,102,0.5)",
+              fontWeight: 600,
+              padding: "10px 16px",
+              fontSize: 13,
+            }}
           >
-            {exporting ? "Exporting…" : "Export My Solasterid"}
+            {exporting ? "Exporting…" : "Take My Solasterid Home"}
           </motion.button>
         </>
       )}
@@ -100,7 +111,12 @@ export function ExportPanel({ state }: Props) {
         <motion.div
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-3 rounded-xl border border-amber-400/20 bg-amber-950/30 p-2.5 text-xs text-amber-200"
+          className="mt-3 rounded-2xl p-2.5 text-[11.5px]"
+          style={{
+            background: "rgba(255,209,102,0.06)",
+            border: "1px solid rgba(255,209,102,0.2)",
+            color: "#FFE6A3",
+          }}
         >
           {message}
         </motion.div>

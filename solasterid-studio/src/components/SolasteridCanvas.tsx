@@ -1,154 +1,581 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useMemo, useEffect, useRef, useState } from "react";
-import type { SolasteridState, SolasteridArm, SolasteridCommittee } from "../lib/solasteridState";
+import type {
+  SolasteridState,
+  SolasteridArm,
+  SolasteridCommittee,
+} from "../lib/solasteridState";
 import { ArmDetailPanel } from "./ArmDetailPanel";
+import { ReefBackground } from "./ReefBackground";
+import { organicArmPath, type Point } from "../lib/organicGeometry";
+
+type ArmBubble = { text: string; tone: "thinking" | "speaking" };
 
 type Props = {
   state: SolasteridState;
+  /** Map of armId → bubble content. Shown as little chat bubbles near each arm. */
+  armBubbles?: Record<string, ArmBubble>;
+  /** Whether the creature is on autonomous growth (autopilot). */
+  autopilot?: boolean;
+  /** Whether a model call is currently active. */
+  isStreaming?: boolean;
 };
 
-type Bubble = { id: number; x: number; size: number; delay: number; duration: number };
+/* ─── Pastel palette ─────────────────────────────────────────
+   Shared with the transcript via src/lib/armColors.ts so the
+   per-arm color dot prefix on report cards matches the canvas.
+   ──────────────────────────────────────────────────────────── */
+import { paletteFor } from "../lib/armColors";
 
-function useBubbles(count = 18) {
-  return useMemo<Bubble[]>(() => {
-    return Array.from({ length: count }, (_, i) => ({
-      id: i,
-      x: 5 + Math.random() * 90,
-      size: 3 + Math.random() * 7,
-      delay: Math.random() * 8,
-      duration: 7 + Math.random() * 9,
-    }));
-  }, [count]);
+type Bubble = {
+  id: number;
+  x: number;
+  size: number;
+  delay: number;
+  duration: number;
+};
+
+function useBubbles(count = 26) {
+  return useMemo<Bubble[]>(
+    () =>
+      Array.from({ length: count }, (_, i) => ({
+        id: i,
+        x: 3 + Math.random() * 94,
+        size: 3 + Math.random() * 9,
+        delay: Math.random() * 10,
+        duration: 9 + Math.random() * 11,
+      })),
+    [count],
+  );
 }
 
-function armLayout(arms: SolasteridArm[], committees: SolasteridCommittee[], cx: number, cy: number) {
+/* ─── Placement ──────────────────────────────────────────── */
+
+type ArmPlacement = {
+  arm: SolasteridArm;
+  angle: number;
+  length: number;
+  baseWidth: number;
+  baseRadius: number;
+  committee?: SolasteridCommittee;
+  geometry: ReturnType<typeof organicArmPath>;
+  displayColor: string;
+};
+
+function placeArms(
+  arms: SolasteridArm[],
+  committees: SolasteridCommittee[],
+  cx: number,
+  cy: number,
+  bodyRadius: number,
+  maxArmLength: number,
+): {
+  active: ArmPlacement[];
+  retired: ArmPlacement[];
+  probation: ArmPlacement[];
+  sectors: Array<{
+    cid: string;
+    start: number;
+    end: number;
+    color: string;
+    name: string;
+  }>;
+} {
   const active = arms.filter((a) => a.status === "active");
   const retired = arms.filter((a) => a.status === "retired");
   const probation = arms.filter((a) => a.status === "probation");
 
-  const sortedComms = [...committees].sort((a, b) => (a.layer ?? 0) - (b.layer ?? 0) || a.id.localeCompare(b.id));
-  const commOrder = sortedComms.map((c) => c.id);
-
-  const commSectors: Record<string, SolasteridArm[]> = {};
+  const sortedComms = [...committees].sort(
+    (a, b) => (a.layer ?? 0) - (b.layer ?? 0) || a.id.localeCompare(b.id),
+  );
+  const groups: Record<string, SolasteridArm[]> = {};
   for (const arm of active) {
     const cid = arm.committeeIds[0] ?? "__none";
-    if (!commSectors[cid]) commSectors[cid] = [];
-    commSectors[cid].push(arm);
+    (groups[cid] ??= []).push(arm);
   }
-  const unassigned = active.filter((a) => !a.committeeIds.length);
-  if (unassigned.length) commSectors["__none"] = unassigned;
+  const orderedKeys = [
+    ...sortedComms.map((c) => c.id).filter((k) => groups[k]?.length),
+    ...(groups["__none"]?.length ? ["__none"] : []),
+  ];
+  if (orderedKeys.length === 0 && active.length) orderedKeys.push("__none");
 
-  const orderedSectorKeys = [...commOrder.filter((k) => commSectors[k]), "__none"].filter(
-    (k) => commSectors[k]?.length
-  );
+  const total = active.length || 1;
+  const sectors: Array<{
+    cid: string;
+    start: number;
+    end: number;
+    color: string;
+    name: string;
+  }> = [];
 
-  const totalActive = active.length || 1;
-  let currentAngle = -Math.PI / 2;
+  let cursor = -Math.PI / 2;
+  const activePlacements: ArmPlacement[] = [];
+  let displayIdx = 0;
 
-  type ArmPos = { arm: SolasteridArm; x: number; y: number; angle: number; r: number };
-  const positions: ArmPos[] = [];
-  const sectorBounds: Array<{ cid: string; startAngle: number; endAngle: number; color: string }> = [];
-
-  for (const sectorKey of orderedSectorKeys) {
-    const sectorArms = commSectors[sectorKey] ?? [];
-    const sectorFraction = sectorArms.length / totalActive;
-    const sectorSpan = sectorFraction * (Math.PI * 2);
-    const sectorStart = currentAngle;
-    const sectorEnd = currentAngle + sectorSpan;
-
-    const comm = committees.find((c) => c.id === sectorKey);
-    sectorBounds.push({
-      cid: sectorKey,
-      startAngle: sectorStart,
-      endAngle: sectorEnd,
-      color: comm?.color ?? "#67e8f9",
+  for (const cid of orderedKeys) {
+    const list = groups[cid] ?? [];
+    const span = (list.length / total) * Math.PI * 2;
+    const comm = committees.find((c) => c.id === cid);
+    sectors.push({
+      cid,
+      start: cursor,
+      end: cursor + span,
+      color: comm?.color ?? "#64F5E6",
+      name: comm?.name ?? "",
     });
 
-    for (let i = 0; i < sectorArms.length; i++) {
-      const t = sectorArms.length === 1 ? 0.5 : i / (sectorArms.length - 1);
-      const angle = sectorStart + t * sectorSpan;
-      const layer = comm?.layer ?? 1;
-      const baseR = 125 + layer * 16;
-      const r = baseR + (i % 2 === 0 ? 0 : 10);
-      positions.push({
-        arm: sectorArms[i],
-        x: cx + Math.cos(angle) * r,
-        y: cy + Math.sin(angle) * r,
-        angle,
-        r,
+    list.forEach((arm, i) => {
+      const denom = list.length === 1 ? 2 : list.length + 1;
+      const t = list.length === 1 ? 0.5 : (i + 1) / denom;
+      const angle = cursor + t * span;
+      const jitter = Math.sin(i * 1.7 + cursor) * (span / (list.length + 2)) * 0.18;
+      const finalAngle = angle + jitter;
+      const len = maxArmLength * (0.84 + ((Math.cos(i * 2.13 + cursor) + 1) / 2) * 0.18);
+      const curvature = Math.sin(finalAngle * 2.4 + i * 0.7) * 0.45;
+      const baseWidth = 24 + Math.sin(i + cursor) * 3;
+      const displayColor = paletteFor(displayIdx, arm.color);
+      const geo = organicArmPath({
+        cx,
+        cy,
+        angle: finalAngle,
+        baseRadius: bodyRadius - 6,
+        length: len,
+        curvature,
+        baseWidth,
+        tipWidth: 2.4,
       });
-    }
-    currentAngle = sectorEnd;
+      activePlacements.push({
+        arm,
+        angle: finalAngle,
+        length: len,
+        baseWidth,
+        baseRadius: bodyRadius - 6,
+        committee: comm,
+        geometry: geo,
+        displayColor,
+      });
+      displayIdx++;
+    });
+    cursor += span;
   }
 
-  const retiredPositions = retired.map((arm, i) => {
-    const angle = (i / (retired.length || 1)) * Math.PI * 2 - Math.PI / 2;
-    const r = 75;
-    return { arm, x: cx + Math.cos(angle) * r, y: cy + Math.sin(angle) * r, angle, r };
+  // Probation arms hover halfway out
+  const probationPlacements: ArmPlacement[] = probation.map((arm, i) => {
+    const angle = (i / Math.max(1, probation.length)) * Math.PI * 2 - Math.PI / 4 + 0.4;
+    const len = maxArmLength * 0.55;
+    const geo = organicArmPath({
+      cx,
+      cy,
+      angle,
+      baseRadius: bodyRadius - 4,
+      length: len,
+      curvature: Math.sin(angle * 3.3) * 0.7,
+      baseWidth: 16,
+      tipWidth: 2,
+    });
+    return {
+      arm,
+      angle,
+      length: len,
+      baseWidth: 16,
+      baseRadius: bodyRadius - 4,
+      geometry: geo,
+      displayColor: "#C8B0E8",
+    };
   });
 
-  const probationPositions = probation.map((arm, i) => {
-    const angle = (i / (probation.length || 1)) * Math.PI * 2 - Math.PI / 3;
-    const r = 178;
-    return { arm, x: cx + Math.cos(angle) * r, y: cy + Math.sin(angle) * r, angle, r };
+  // Retired = fossil fragments inside body
+  const retiredPlacements: ArmPlacement[] = retired.map((arm, i) => {
+    const angle = (i / Math.max(1, retired.length)) * Math.PI * 2 - Math.PI / 2 + 0.15;
+    const len = bodyRadius * 0.55;
+    const geo = organicArmPath({
+      cx,
+      cy,
+      angle,
+      baseRadius: 6,
+      length: len,
+      curvature: Math.sin(angle * 4.2) * 0.4,
+      baseWidth: 9,
+      tipWidth: 1.4,
+    });
+    return {
+      arm,
+      angle,
+      length: len,
+      baseWidth: 9,
+      baseRadius: 6,
+      geometry: geo,
+      displayColor: "#6B5A50",
+    };
   });
 
-  return { positions, retiredPositions, probationPositions, sectorBounds };
+  return {
+    active: activePlacements,
+    retired: retiredPlacements,
+    probation: probationPlacements,
+    sectors,
+  };
 }
 
-function armPath(cx: number, cy: number, x2: number, y2: number, angle: number) {
-  const wiggle = 20 * Math.sin(angle * 3.7);
-  const perpX = -Math.sin(angle) * wiggle;
-  const perpY = Math.cos(angle) * wiggle;
-  const cpx = (cx + x2) / 2 + perpX;
-  const cpy = (cy + y2) / 2 + perpY;
-  return `M ${cx} ${cy} Q ${cpx} ${cpy} ${x2} ${y2}`;
-}
-
-function CoralSilhouettes() {
+/* ─── Sucker ridge along an arm ────────────────────────── */
+function SuckerRidge({
+  geometry,
+  count,
+  color,
+}: {
+  geometry: ArmPlacement["geometry"];
+  count: number;
+  color: string;
+}) {
+  const { p0, p1, p2 } = geometry;
+  const dots: Point[] = [];
+  for (let i = 1; i <= count; i++) {
+    const t = i / (count + 1);
+    const it = 1 - t;
+    dots.push({
+      x: it * it * p0.x + 2 * it * t * p1.x + t * t * p2.x,
+      y: it * it * p0.y + 2 * it * t * p1.y + t * t * p2.y,
+    });
+  }
   return (
-    <g opacity="0.35">
-      <path d="M 20 440 Q 30 390 22 360 Q 40 330 28 300 Q 50 310 35 280 M 28 380 Q 10 350 18 320 M 22 340 Q 42 320 38 295" stroke="#e0664a" strokeWidth="7" strokeLinecap="round" fill="none" />
-      <path d="M 55 440 Q 65 400 58 380 Q 80 355 62 330" stroke="#c0a060" strokeWidth="5" strokeLinecap="round" fill="none" />
-      <path d="M 420 440 Q 415 390 425 360 Q 405 325 418 295 Q 395 310 408 275 M 418 380 Q 435 345 428 315 M 424 335 Q 402 318 406 288" stroke="#e0664a" strokeWidth="7" strokeLinecap="round" fill="none" />
-      <path d="M 385 440 Q 378 405 388 382 Q 368 355 380 328" stroke="#c0a060" strokeWidth="5" strokeLinecap="round" fill="none" />
-      <path d="M 200 440 Q 205 430 200 420 Q 215 410 205 398" stroke="#e075a0" strokeWidth="4" strokeLinecap="round" fill="none" />
-      <path d="M 240 440 Q 244 432 240 424 Q 252 415 244 404" stroke="#e075a0" strokeWidth="4" strokeLinecap="round" fill="none" />
-      <ellipse cx="220" cy="445" rx="210" ry="8" fill="#b8a870" opacity="0.25" />
+    <g>
+      {dots.map((d, i) => {
+        const taper = 1 - (i + 1) / (count + 1);
+        return (
+          <circle
+            key={i}
+            cx={d.x}
+            cy={d.y}
+            r={1.4 + taper * 0.9}
+            fill={color}
+            opacity={0.55}
+          />
+        );
+      })}
     </g>
   );
 }
 
-function CausticRays() {
-  const rays = useMemo(() => Array.from({ length: 6 }, (_, i) => ({
-    id: i,
-    x: 30 + i * 65,
-    width: 18 + i * 4,
-    delay: i * 1.3,
-    duration: 6 + i * 0.8,
-  })), []);
+/* ─── Center creature (terracotta body + papulae ring + mouth) ─── */
+function CenterCreature({
+  cx,
+  cy,
+  radius,
+  pulsing,
+  isStreaming,
+}: {
+  cx: number;
+  cy: number;
+  radius: number;
+  pulsing: boolean;
+  isStreaming: boolean;
+}) {
+  // Papulae dots ringing the body
+  const papulae = useMemo(() => {
+    const arr: Array<{ x: number; y: number; r: number; tint: string }> = [];
+    const count = 26;
+    for (let i = 0; i < count; i++) {
+      const a = (i / count) * Math.PI * 2;
+      const wobble = (i % 3) - 1; // -1, 0, 1
+      const rr = radius * 0.88 + wobble * 1.2;
+      arr.push({
+        x: cx + Math.cos(a) * rr,
+        y: cy + Math.sin(a) * rr,
+        r: 1.6 + (i % 2 === 0 ? 0.4 : 0),
+        tint: i % 5 === 0 ? "#FFE6A3" : "#FFC788",
+      });
+    }
+    return arr;
+  }, [cx, cy, radius]);
 
   return (
-    <g opacity="0.12">
-      {rays.map((ray) => (
-        <motion.path
-          key={ray.id}
-          d={`M ${ray.x} 0 L ${ray.x - 12} 440 L ${ray.x + ray.width} 440 L ${ray.x + 20} 0 Z`}
-          fill="url(#causticGrad)"
-          animate={{ skewX: [-2, 2, -2], opacity: [0.07, 0.18, 0.07] }}
-          transition={{ duration: ray.duration, repeat: Infinity, delay: ray.delay, ease: "easeInOut" }}
-        />
+    <g>
+      {/* Big soft teal halo behind body */}
+      <motion.circle
+        cx={cx}
+        cy={cy}
+        r={radius * 3.8}
+        fill="url(#bodyAura)"
+        animate={{
+          opacity: pulsing ? [0.55, 0.85, 0.55] : [0.32, 0.5, 0.32],
+          scale: [1, 1.03, 1],
+        }}
+        transition={{
+          duration: pulsing ? 1.1 : 5.2,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+        style={{ transformOrigin: `${cx}px ${cy}px` }}
+      />
+      <motion.circle
+        cx={cx}
+        cy={cy}
+        r={radius * 2.5}
+        fill="url(#bodyAuraInner)"
+        animate={{ opacity: [0.4, 0.6, 0.4] }}
+        transition={{ duration: 4.4, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      {/* Body — terracotta disc */}
+      <circle
+        cx={cx}
+        cy={cy}
+        r={radius}
+        fill="url(#bodyTerracotta)"
+        stroke="#5A2A1A"
+        strokeWidth={1.2}
+      />
+      {/* Inner shadow ring */}
+      <circle
+        cx={cx}
+        cy={cy}
+        r={radius}
+        fill="none"
+        stroke="rgba(0,0,0,0.35)"
+        strokeWidth={2}
+        opacity={0.5}
+        style={{ filter: "blur(2px)" }}
+      />
+      {/* Highlight (top-left sheen) */}
+      <ellipse
+        cx={cx - radius * 0.35}
+        cy={cy - radius * 0.4}
+        rx={radius * 0.45}
+        ry={radius * 0.28}
+        fill="rgba(255,220,180,0.18)"
+      />
+
+      {/* Papulae dots */}
+      {papulae.map((p, i) => (
+        <circle key={i} cx={p.x} cy={p.y} r={p.r} fill={p.tint} opacity={0.9} />
       ))}
+
+      {/* Black mouth */}
+      <circle
+        cx={cx}
+        cy={cy}
+        r={radius * 0.22}
+        fill="#0A0608"
+        stroke="rgba(0,0,0,0.8)"
+        strokeWidth={0.5}
+      />
+      <motion.circle
+        cx={cx}
+        cy={cy}
+        r={radius * 0.22}
+        fill="url(#mouthShine)"
+        animate={{
+          r: isStreaming
+            ? [radius * 0.2, radius * 0.27, radius * 0.2]
+            : [radius * 0.21, radius * 0.24, radius * 0.21],
+        }}
+        transition={{
+          duration: isStreaming ? 1.6 : 3.8,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }}
+      />
+      {/* Tiny inner reflection in mouth */}
+      <circle
+        cx={cx - radius * 0.06}
+        cy={cy - radius * 0.06}
+        r={radius * 0.04}
+        fill="#FFFFFF"
+        opacity={0.4}
+      />
     </g>
   );
 }
 
-export function SolasteridCanvas({ state }: Props) {
-  const svgSize = 440;
-  const cx = svgSize / 2;
-  const cy = svgSize / 2;
+/* ─── Label box with leader line ────────────────────── */
+function LabelBox({
+  x,
+  y,
+  text,
+  color,
+  selected,
+  anchor,
+  fromX,
+  fromY,
+}: {
+  x: number;
+  y: number;
+  text: string;
+  color: string;
+  selected: boolean;
+  anchor: "start" | "middle" | "end";
+  fromX: number;
+  fromY: number;
+}) {
+  // Estimate text width to size the rounded box.
+  const charW = selected ? 7.1 : 6.4;
+  const pad = 8;
+  const w = Math.max(28, text.length * charW + pad * 2);
+  const h = selected ? 22 : 19;
+  const boxX =
+    anchor === "start"
+      ? x
+      : anchor === "end"
+      ? x - w
+      : x - w / 2;
+  const boxY = y - h / 2;
+  // Leader line endpoint snaps to nearest box edge
+  const targetX =
+    anchor === "start" ? boxX : anchor === "end" ? boxX + w : x;
+  const targetY = boxY + h / 2;
+  return (
+    <g>
+      <line
+        x1={fromX}
+        y1={fromY}
+        x2={targetX}
+        y2={targetY}
+        stroke={color}
+        strokeWidth={selected ? 1.1 : 0.7}
+        strokeDasharray={selected ? "0" : "2 3"}
+        opacity={selected ? 0.75 : 0.45}
+      />
+      <rect
+        x={boxX}
+        y={boxY}
+        rx={h / 2}
+        ry={h / 2}
+        width={w}
+        height={h}
+        fill="rgba(7,21,35,0.78)"
+        stroke={color}
+        strokeWidth={selected ? 1.2 : 0.8}
+        opacity={selected ? 1 : 0.92}
+      />
+      <text
+        x={boxX + w / 2}
+        y={boxY + h / 2 + 0.5}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fontFamily="Space Grotesk, Inter, sans-serif"
+        fontWeight={selected ? 600 : 500}
+        fontSize={selected ? 13 : 11.5}
+        fill={selected ? "#FFFFFF" : "#E8F3F1"}
+        letterSpacing="0.01em"
+      >
+        {text}
+      </text>
+    </g>
+  );
+}
 
-  const bubbles = useBubbles(16);
+/* ─── Speech bubble at an arm tip ──────────────────── */
+function SpeechBubble({
+  x,
+  y,
+  text,
+  tone,
+  delay,
+}: {
+  x: number;
+  y: number;
+  text: string;
+  tone: "thinking" | "speaking";
+  delay: number;
+}) {
+  const charW = 5.8;
+  const pad = 10;
+  const displayText = tone === "thinking" ? "•••" : text;
+  const w = Math.min(190, Math.max(38, displayText.length * charW + pad * 2));
+  const h = 24;
+  const cornerR = 12;
+  const bubbleX = x - w / 2;
+  const bubbleY = y - h - 12;
+  return (
+    <motion.g
+      initial={{ opacity: 0, scale: 0.6, y: 6 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.8, y: -6 }}
+      transition={{ duration: 0.4, delay, ease: [0.2, 0.7, 0.2, 1] }}
+      style={{ transformOrigin: `${x}px ${y}px` }}
+    >
+      {/* tail pointing from bubble bottom down to the arm tip */}
+      <path
+        d={`M ${x - 5} ${bubbleY + h - 1} L ${x} ${y - 2} L ${x + 5} ${bubbleY + h - 1} Z`}
+        fill="rgba(255,255,255,0.96)"
+        stroke="rgba(7,21,35,0.5)"
+        strokeWidth={0.6}
+      />
+      {/* bubble body */}
+      <rect
+        x={bubbleX}
+        y={bubbleY}
+        rx={cornerR}
+        ry={cornerR}
+        width={w}
+        height={h}
+        fill="rgba(255,255,255,0.96)"
+        stroke="rgba(7,21,35,0.55)"
+        strokeWidth={0.8}
+      />
+      {tone === "thinking" ? (
+        <g>
+          {/* Three pulsing dots */}
+          {[0, 1, 2].map((i) => (
+            <motion.circle
+              key={i}
+              cx={bubbleX + w / 2 + (i - 1) * 7}
+              cy={bubbleY + h / 2}
+              r={2.4}
+              fill="#0A1626"
+              animate={{ opacity: [0.3, 1, 0.3] }}
+              transition={{ duration: 1.1, repeat: Infinity, delay: i * 0.18 }}
+            />
+          ))}
+        </g>
+      ) : (
+        <text
+          x={bubbleX + w / 2}
+          y={bubbleY + h / 2 + 0.5}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fontFamily="Space Grotesk, Inter, sans-serif"
+          fontWeight={500}
+          fontSize={12}
+          fill="#0A1626"
+        >
+          {displayText}
+        </text>
+      )}
+    </motion.g>
+  );
+}
+
+/* ─── Helper: gently swaying transform ──────────────── */
+function useGentleSway() {
+  // Slow back-and-forth tilt ± 2°. Updates at ~12fps so we don't burn cycles
+  // re-rendering the whole canvas — the motion reads smooth at this speed.
+  const [t, setT] = useState(0);
+  useEffect(() => {
+    const start = performance.now();
+    const id = window.setInterval(() => {
+      setT((performance.now() - start) / 1000);
+    }, 85);
+    return () => window.clearInterval(id);
+  }, []);
+  return Math.sin((t / 18) * Math.PI * 2) * 2; // degrees
+}
+
+/* ─── Main component ─────────────────────────────────── */
+
+export function SolasteridCanvas({
+  state,
+  armBubbles = {},
+  autopilot = false,
+  isStreaming = false,
+}: Props) {
+  const svgSize = 720;
+  const cx = svgSize / 2;
+  const cy = svgSize / 2 - 10;
+  const bodyRadius = 56;
+  const maxArmLength = 240;
+
+  const bubbles = useBubbles(28);
   const [pulsingCore, setPulsingCore] = useState(false);
   const [selectedArmId, setSelectedArmId] = useState<string | null>(null);
   const [hoveredArmId, setHoveredArmId] = useState<string | null>(null);
@@ -158,264 +585,456 @@ export function SolasteridCanvas({ state }: Props) {
     if (state.round !== prevRound.current) {
       prevRound.current = state.round;
       setPulsingCore(true);
-      const t = setTimeout(() => setPulsingCore(false), 900);
+      const t = setTimeout(() => setPulsingCore(false), 1300);
       return () => clearTimeout(t);
     }
   }, [state.round]);
 
-  const { positions, retiredPositions, probationPositions, sectorBounds } = useMemo(
-    () => armLayout(state.arms, state.committees, cx, cy),
-    [state.arms, state.committees, cx, cy]
+  const swayDeg = useGentleSway();
+
+  const { active, retired, probation, sectors } = useMemo(
+    () => placeArms(state.arms, state.committees, cx, cy, bodyRadius, maxArmLength),
+    [state.arms, state.committees, cx, cy, bodyRadius],
   );
 
-  // Labels visible when: ≤12 active arms, or arm is hovered/selected
-  const activeCount = state.arms.filter((a) => a.status === "active").length;
-  const alwaysShowLabels = activeCount <= 12;
-
+  const activeCount = active.length;
   const selectedArm = state.arms.find((a) => a.id === selectedArmId) ?? null;
 
   function handleArmClick(armId: string) {
     setSelectedArmId((prev) => (prev === armId ? null : armId));
   }
 
+  const showAllLabels = activeCount <= 8;
+
   return (
     <section
-      className="relative overflow-hidden rounded-3xl border border-cyan-300/20 shadow-2xl"
-      style={{ background: "linear-gradient(180deg, #050d1a 0%, #061428 40%, #081830 70%, #0a1410 100%)", minHeight: 500 }}
+      className="relative overflow-hidden glass-panel"
+      style={{ padding: 0, minHeight: 660 }}
     >
+      {/* Background reef */}
+      <div className="absolute inset-0" aria-hidden>
+        <ReefBackground width={svgSize} height={680} alive />
+      </div>
+
       {/* Floating bubbles */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         {bubbles.map((b) => (
           <motion.div
             key={b.id}
-            className="absolute rounded-full border border-cyan-300/30"
+            className="absolute rounded-full"
             style={{
               left: b.x + "%",
               bottom: "-20px",
               width: b.size,
               height: b.size,
-              background: "radial-gradient(circle at 30% 30%, rgba(103,232,249,0.3), transparent)",
+              background:
+                "radial-gradient(circle at 30% 30%, rgba(168,255,235,0.55), rgba(168,255,235,0.05) 65%, transparent)",
+              boxShadow:
+                "inset 0 0 6px rgba(168,255,235,0.3), 0 0 4px rgba(168,255,235,0.22)",
             }}
-            animate={{ y: [0, -600], opacity: [0.6, 0] }}
-            transition={{ duration: b.duration, delay: b.delay, repeat: Infinity, ease: "linear" }}
+            animate={{ y: [0, -780], opacity: [0.7, 0] }}
+            transition={{
+              duration: b.duration,
+              delay: b.delay,
+              repeat: Infinity,
+              ease: "linear",
+            }}
           />
         ))}
       </div>
 
-      {/* Main SVG */}
+      {/* Main organism SVG */}
       <svg
         viewBox={`0 0 ${svgSize} ${svgSize}`}
-        className="mx-auto block"
+        className="relative mx-auto block"
         style={{ width: "100%", maxWidth: svgSize, height: "auto" }}
       >
         <defs>
-          <radialGradient id="coreGrad" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#0d9488" stopOpacity="0.9" />
-            <stop offset="60%" stopColor="#065f46" stopOpacity="0.7" />
-            <stop offset="100%" stopColor="#050d1a" stopOpacity="0.4" />
+          {/* Body gradients */}
+          <radialGradient id="bodyTerracotta" cx="40%" cy="38%" r="72%">
+            <stop offset="0%" stopColor="#C97956" />
+            <stop offset="55%" stopColor="#A35234" />
+            <stop offset="100%" stopColor="#5E2613" />
           </radialGradient>
-          <radialGradient id="bodyGrad" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#164e63" />
-            <stop offset="100%" stopColor="#0a1628" />
+          <radialGradient id="mouthShine" cx="50%" cy="50%" r="60%">
+            <stop offset="0%" stopColor="rgba(255,200,140,0.18)" />
+            <stop offset="60%" stopColor="rgba(255,200,140,0)" />
+            <stop offset="100%" stopColor="rgba(0,0,0,0)" />
           </radialGradient>
-          <linearGradient id="causticGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#67e8f9" stopOpacity="1" />
-            <stop offset="100%" stopColor="#67e8f9" stopOpacity="0" />
-          </linearGradient>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+          <radialGradient id="bodyAura" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="rgba(143,255,230,0.45)" />
+            <stop offset="55%" stopColor="rgba(100,245,230,0.18)" />
+            <stop offset="100%" stopColor="rgba(143,255,230,0)" />
+          </radialGradient>
+          <radialGradient id="bodyAuraInner" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="rgba(255,255,255,0.18)" />
+            <stop offset="100%" stopColor="rgba(143,255,230,0)" />
+          </radialGradient>
+
+          <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="2.2" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
           </filter>
-          <filter id="strongGlow">
-            <feGaussianBlur stdDeviation="6" result="blur" />
-            <feMerge><feMergeNode in="blur" /><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-          </filter>
-          <filter id="selectedGlow">
-            <feGaussianBlur stdDeviation="9" result="blur" />
-            <feMerge><feMergeNode in="blur" /><feMergeNode in="blur" /><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+          <filter id="armShadow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="3" />
           </filter>
         </defs>
 
-        <CausticRays />
-
-        {/* Committee sector arcs */}
-        {sectorBounds.map((sector) => {
-          if (sector.cid === "__none") return null;
-          const outerR = 165;
-          const arcThick = 10;
-          const midAngle = (sector.startAngle + sector.endAngle) / 2;
-          const span = sector.endAngle - sector.startAngle;
-          if (span < 0.05) return null;
-          const x1 = cx + Math.cos(sector.startAngle) * outerR;
-          const y1 = cy + Math.sin(sector.startAngle) * outerR;
-          const x2 = cx + Math.cos(sector.endAngle) * outerR;
-          const y2 = cy + Math.sin(sector.endAngle) * outerR;
-          const largeArc = span > Math.PI ? 1 : 0;
-          return (
-            <g key={sector.cid}>
-              <path
-                d={`M ${cx + Math.cos(sector.startAngle) * (outerR - arcThick)} ${cy + Math.sin(sector.startAngle) * (outerR - arcThick)} A ${outerR - arcThick} ${outerR - arcThick} 0 ${largeArc} 1 ${cx + Math.cos(sector.endAngle) * (outerR - arcThick)} ${cy + Math.sin(sector.endAngle) * (outerR - arcThick)} L ${x2} ${y2} A ${outerR} ${outerR} 0 ${largeArc} 0 ${x1} ${y1} Z`}
-                fill={sector.color}
-                opacity="0.07"
-              />
-              <text
-                x={cx + Math.cos(midAngle) * (outerR + 14)}
-                y={cy + Math.sin(midAngle) * (outerR + 14)}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fill={sector.color}
-                fontSize="5.5"
-                opacity="0.65"
-              >
-                {(state.committees.find((c) => c.id === sector.cid)?.name ?? "").slice(0, 16)}
-              </text>
-            </g>
-          );
-        })}
-
-        {/* Retired arms — fossilized inner ring */}
-        {retiredPositions.map(({ arm, x, y, angle }) => (
-          <g
-            key={arm.id}
-            opacity={hoveredArmId === arm.id ? 0.55 : 0.2}
-            style={{ cursor: "pointer" }}
-            onClick={() => handleArmClick(arm.id)}
-            onMouseEnter={() => setHoveredArmId(arm.id)}
-            onMouseLeave={() => setHoveredArmId(null)}
-          >
-            <path d={armPath(cx, cy, x, y, angle)} stroke="#475569" strokeWidth="5" strokeLinecap="round" fill="none" />
-            <circle cx={x} cy={y} r="5" fill="#334155" />
-            {hoveredArmId === arm.id && (
-              <text x={x + Math.cos(angle) * 10} y={y + Math.sin(angle) * 10} textAnchor="middle" fill="#64748b" fontSize="7">
-                {arm.name.slice(0, 18)}
-              </text>
-            )}
-          </g>
-        ))}
-
-        {/* Active arms */}
-        <AnimatePresence>
-          {positions.map(({ arm, x, y, angle }, i) => {
-            const isSelected = selectedArmId === arm.id;
-            const isHovered = hoveredArmId === arm.id;
-            const showLabel = alwaysShowLabels || isHovered || isSelected;
-            const color = arm.color ?? "#67e8f9";
-
+        {/* Gentle whole-creature sway */}
+        <g
+          style={{
+            transformOrigin: `${cx}px ${cy}px`,
+            transform: `rotate(${swayDeg}deg)`,
+            transition: "transform 200ms linear",
+          }}
+        >
+          {/* Committee sector tints — very low opacity */}
+          {sectors.map((s, i) => {
+            if (s.cid === "__none") return null;
+            const span = s.end - s.start;
+            if (span < 0.05) return null;
+            const innerR = bodyRadius + 6;
+            const outerR = maxArmLength + bodyRadius + 30;
+            const x1 = cx + Math.cos(s.start) * outerR;
+            const y1 = cy + Math.sin(s.start) * outerR;
+            const x2 = cx + Math.cos(s.end) * outerR;
+            const y2 = cy + Math.sin(s.end) * outerR;
+            const x3 = cx + Math.cos(s.end) * innerR;
+            const y3 = cy + Math.sin(s.end) * innerR;
+            const x4 = cx + Math.cos(s.start) * innerR;
+            const y4 = cy + Math.sin(s.start) * innerR;
+            const large = span > Math.PI ? 1 : 0;
             return (
-              <motion.g
-                key={arm.id}
-                initial={{ opacity: 0, scale: 0.3 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.3 }}
-                transition={{ duration: 0.65, delay: i * 0.03 }}
-                style={{ cursor: "pointer" }}
-                onClick={() => handleArmClick(arm.id)}
-                onMouseEnter={() => setHoveredArmId(arm.id)}
-                onMouseLeave={() => setHoveredArmId(null)}
-              >
-                {/* Arm body */}
-                <motion.path
-                  d={armPath(cx, cy, x, y, angle)}
-                  stroke={color}
-                  strokeWidth={isSelected ? 18 : isHovered ? 16 : 13}
-                  strokeLinecap="round"
-                  fill="none"
-                  filter={isSelected ? "url(#selectedGlow)" : "url(#glow)"}
-                  opacity={isSelected ? 1 : isHovered ? 0.95 : 0.78}
-                  animate={{ strokeOpacity: [0.72, 1, 0.72] }}
-                  transition={{ duration: 2.8 + i * 0.12, repeat: Infinity, ease: "easeInOut" }}
-                />
-
-                {/* Hit zone (invisible, larger than the stroke) */}
-                <path
-                  d={armPath(cx, cy, x, y, angle)}
-                  stroke="transparent"
-                  strokeWidth="28"
-                  fill="none"
-                />
-
-                {/* Tip glow */}
-                <motion.circle
-                  cx={x}
-                  cy={y}
-                  r={isSelected ? 13 : 9}
-                  fill={color}
-                  filter={isSelected ? "url(#selectedGlow)" : "url(#strongGlow)"}
-                  animate={{ r: isSelected ? [12, 15, 12] : [8, 11, 8], opacity: [0.8, 1, 0.8] }}
-                  transition={{ duration: 2.4 + i * 0.1, repeat: Infinity, ease: "easeInOut" }}
-                />
-                <circle cx={x} cy={y} r={isSelected ? 5 : 4} fill="#fff" opacity={isSelected ? 1 : 0.8} />
-
-                {/* Label — always shown when ≤12 arms or when hovered/selected */}
-                <AnimatePresence>
-                  {showLabel && (
-                    <motion.text
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      x={x + Math.cos(angle) * 17}
-                      y={y + Math.sin(angle) * 17}
-                      textAnchor={Math.cos(angle) > 0.15 ? "start" : Math.cos(angle) < -0.15 ? "end" : "middle"}
-                      dominantBaseline="middle"
-                      fill={isSelected ? color : "#e2e8f0"}
-                      fontSize={isSelected ? 8.5 : 7.5}
-                      fontWeight={isSelected ? "bold" : "normal"}
-                      opacity={isSelected ? 1 : 0.85}
-                    >
-                      {arm.name.slice(0, 22)}
-                    </motion.text>
-                  )}
-                </AnimatePresence>
-              </motion.g>
+              <path
+                key={`sector-${i}`}
+                d={`M ${x1} ${y1} A ${outerR} ${outerR} 0 ${large} 1 ${x2} ${y2}
+                    L ${x3} ${y3} A ${innerR} ${innerR} 0 ${large} 0 ${x4} ${y4} Z`}
+                fill={s.color}
+                opacity={0.045}
+              />
             );
           })}
-        </AnimatePresence>
 
-        {/* Probation arms */}
-        {probationPositions.map(({ arm, x, y, angle }, i) => (
-          <motion.g
-            key={arm.id}
-            animate={{ opacity: [0.4, 0.85, 0.4] }}
-            transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.3 }}
-            style={{ cursor: "pointer" }}
-            onClick={() => handleArmClick(arm.id)}
-          >
-            <path d={armPath(cx, cy, x, y, angle)} stroke="#94a3b8" strokeWidth="10" strokeLinecap="round" fill="none" strokeDasharray="6 4" />
-            <circle cx={x} cy={y} r="6" fill="#94a3b8" opacity="0.6" />
-            <text x={x} y={y + 16} textAnchor="middle" fill="#94a3b8" fontSize="7" opacity="0.7">
-              {arm.name.slice(0, 16)} (?)
-            </text>
-          </motion.g>
-        ))}
+          {/* Soft drop shadow under each arm */}
+          {active.map((p) => (
+            <path
+              key={"shadow-" + p.arm.id}
+              d={p.geometry.ribbon}
+              fill="#02080F"
+              opacity={0.35}
+              filter="url(#armShadow)"
+              transform="translate(2,4)"
+            />
+          ))}
 
-        {/* Central starfish body */}
-        <motion.circle
-          cx={cx} cy={cy} r="38"
-          fill="url(#bodyGrad)"
-          stroke="#0d9488"
-          strokeWidth="3"
-          filter="url(#glow)"
-          animate={{ r: [36, 42, 36], strokeOpacity: [0.6, 1, 0.6] }}
-          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.circle
-          cx={cx} cy={cy}
-          r={pulsingCore ? 54 : 38}
-          fill="url(#coreGrad)"
-          opacity={pulsingCore ? 0.55 : 0.28}
-          transition={{ duration: 0.5 }}
-        />
+          {/* Retired arms = small fossil bits inside body */}
+          {retired.map(({ arm, geometry }) => (
+            <g
+              key={arm.id}
+              style={{ cursor: "pointer" }}
+              onClick={() => handleArmClick(arm.id)}
+              onMouseEnter={() => setHoveredArmId(arm.id)}
+              onMouseLeave={() => setHoveredArmId(null)}
+            >
+              <path
+                d={geometry.ribbon}
+                fill="#3A4E64"
+                opacity={hoveredArmId === arm.id ? 0.55 : 0.3}
+              />
+            </g>
+          ))}
 
-        <text x={cx} y={cy - 7} textAnchor="middle" fill="#67e8f9" fontSize="9" fontWeight="bold" opacity="0.95">
-          Speakerbot
-        </text>
-        <text x={cx} y={cy + 7} textAnchor="middle" fill="#94a3b8" fontSize="7.5">r{state.round}</text>
-        <text x={cx} y={cy + 19} textAnchor="middle" fill="#5eead4" fontSize="6.5" opacity="0.8">
-          {activeCount} arms
-        </text>
+          {/* Active arms — organic pastel ribbons */}
+          <AnimatePresence>
+            {active.map((p, i) => {
+              const { arm, geometry, displayColor } = p;
+              const isSelected = selectedArmId === arm.id;
+              const isHovered = hoveredArmId === arm.id;
+              const isDimmed = selectedArmId && !isSelected;
+              return (
+                <motion.g
+                  key={arm.id}
+                  initial={{ opacity: 0, scale: 0.4 }}
+                  animate={{ opacity: isDimmed ? 0.45 : 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.4 }}
+                  transition={{ duration: 0.55, delay: i * 0.025 }}
+                  style={{ cursor: "pointer", transformOrigin: `${cx}px ${cy}px` }}
+                  onClick={() => handleArmClick(arm.id)}
+                  onMouseEnter={() => setHoveredArmId(arm.id)}
+                  onMouseLeave={() => setHoveredArmId(null)}
+                >
+                  {/* Main ribbon body */}
+                  <path
+                    d={geometry.ribbon}
+                    fill={displayColor}
+                    opacity={0.95}
+                    stroke="rgba(0,0,0,0.25)"
+                    strokeWidth={0.6}
+                  />
+                  {/* Upper highlight along the curve */}
+                  <path
+                    d={geometry.center}
+                    fill="none"
+                    stroke="rgba(255,255,255,0.55)"
+                    strokeWidth={isSelected ? 1.5 : 1.0}
+                    strokeLinecap="round"
+                    opacity={0.45}
+                  />
+                  {/* Sucker ridge dots */}
+                  <SuckerRidge geometry={geometry} count={6} color="#4A2418" />
+                  {/* Tip glow */}
+                  <motion.circle
+                    cx={geometry.tip.x}
+                    cy={geometry.tip.y}
+                    r={isSelected ? 5 : 3.5}
+                    fill={displayColor}
+                    filter="url(#softGlow)"
+                    animate={{
+                      r: isSelected ? [5, 6.5, 5] : [3.2, 4.4, 3.2],
+                      opacity: [0.75, 1, 0.75],
+                    }}
+                    transition={{
+                      duration: 2.6 + i * 0.1,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                  />
+                  <circle
+                    cx={geometry.tip.x}
+                    cy={geometry.tip.y}
+                    r={isSelected ? 2.0 : 1.4}
+                    fill="#FFFFFF"
+                    opacity={0.85}
+                  />
+                </motion.g>
+              );
+            })}
+          </AnimatePresence>
 
-        <CoralSilhouettes />
+          {/* Probation arms — wavering wisps */}
+          {probation.map(({ arm, geometry }, i) => (
+            <motion.g
+              key={arm.id}
+              animate={{ opacity: [0.32, 0.7, 0.32] }}
+              transition={{ duration: 1.6, repeat: Infinity, delay: i * 0.35 }}
+              style={{ cursor: "pointer" }}
+              onClick={() => handleArmClick(arm.id)}
+            >
+              <path
+                d={geometry.ribbon}
+                fill="rgba(200,176,232,0.32)"
+                stroke="rgba(200,176,232,0.7)"
+                strokeWidth={0.8}
+                strokeDasharray="3 3"
+              />
+              <circle
+                cx={geometry.tip.x}
+                cy={geometry.tip.y}
+                r={2.4}
+                fill="#C8B0E8"
+                opacity={0.8}
+              />
+            </motion.g>
+          ))}
+
+          {/* Center creature */}
+          <CenterCreature
+            cx={cx}
+            cy={cy}
+            radius={bodyRadius}
+            pulsing={pulsingCore}
+            isStreaming={isStreaming}
+          />
+        </g>
+
+        {/* Labels + leader lines (NOT inside the sway group — they stay readable) */}
+        <g pointerEvents="none">
+          {active.map((p) => {
+            const isSelected = selectedArmId === p.arm.id;
+            const isHovered = hoveredArmId === p.arm.id;
+            const hasBubble = !!armBubbles[p.arm.id];
+            const show = isSelected || isHovered || showAllLabels;
+            if (!show || hasBubble) return null;
+            // Account for sway when placing the leader endpoint
+            const swayRad = (swayDeg * Math.PI) / 180;
+            const cosS = Math.cos(swayRad);
+            const sinS = Math.sin(swayRad);
+            // rotate tip around (cx,cy)
+            const dx = p.geometry.tip.x - cx;
+            const dy = p.geometry.tip.y - cy;
+            const tipX = cx + dx * cosS - dy * sinS;
+            const tipY = cy + dx * sinS + dy * cosS;
+            // Label position on a ring outside the creature, at the (rotated) angle
+            const rotatedAngle = p.angle + swayRad;
+            const ringR = maxArmLength + bodyRadius + 48;
+            const lx = cx + Math.cos(rotatedAngle) * ringR;
+            const ly = cy + Math.sin(rotatedAngle) * ringR;
+            const anchor: "start" | "middle" | "end" =
+              Math.cos(rotatedAngle) > 0.25
+                ? "start"
+                : Math.cos(rotatedAngle) < -0.25
+                ? "end"
+                : "middle";
+            return (
+              <LabelBox
+                key={"lbl-" + p.arm.id}
+                x={lx}
+                y={ly}
+                text={p.arm.name}
+                color={p.displayColor}
+                selected={isSelected}
+                anchor={anchor}
+                fromX={tipX}
+                fromY={tipY}
+              />
+            );
+          })}
+        </g>
+
+        {/* Speech bubbles — also outside sway group, but positioned using sway-rotated tips */}
+        <g pointerEvents="none">
+          <AnimatePresence>
+            {active.map((p, i) => {
+              const bub = armBubbles[p.arm.id];
+              if (!bub) return null;
+              const swayRad = (swayDeg * Math.PI) / 180;
+              const cosS = Math.cos(swayRad);
+              const sinS = Math.sin(swayRad);
+              const dx = p.geometry.tip.x - cx;
+              const dy = p.geometry.tip.y - cy;
+              const tipX = cx + dx * cosS - dy * sinS;
+              const tipY = cy + dx * sinS + dy * cosS;
+              return (
+                <SpeechBubble
+                  key={"bub-" + p.arm.id}
+                  x={tipX}
+                  y={tipY}
+                  text={bub.text}
+                  tone={bub.tone}
+                  delay={Math.min(i * 0.04, 0.4)}
+                />
+              );
+            })}
+          </AnimatePresence>
+        </g>
       </svg>
+
+      {/* AUTOPILOT badge — top of canvas, large + obvious */}
+      <div
+        className="absolute top-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1"
+        style={{ pointerEvents: "none" }}
+      >
+        {autopilot ? (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-center gap-2 px-4 py-2 rounded-full"
+            style={{
+              background:
+                "linear-gradient(135deg, rgba(143,255,230,0.18), rgba(185,156,255,0.18))",
+              border: "1.5px solid rgba(143,255,230,0.5)",
+              boxShadow: "0 0 24px rgba(143,255,230,0.25)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
+            }}
+          >
+            <motion.span
+              animate={{ scale: [1, 1.3, 1], opacity: [0.7, 1, 0.7] }}
+              transition={{ duration: 1.3, repeat: Infinity, ease: "easeInOut" }}
+              className="block rounded-full"
+              style={{
+                width: 9,
+                height: 9,
+                background: "#8FFFE6",
+                boxShadow: "0 0 10px #8FFFE6",
+              }}
+            />
+            <span
+              className="font-display font-semibold text-[13px]"
+              style={{
+                color: "#E8F3F1",
+                letterSpacing: "0.22em",
+                textShadow: "0 1px 6px rgba(0,0,0,0.5)",
+              }}
+            >
+              AUTOPILOT
+            </span>
+          </motion.div>
+        ) : (
+          <div
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-full"
+            style={{
+              background: "rgba(7,21,35,0.55)",
+              border: "1px solid rgba(143,255,230,0.18)",
+              backdropFilter: "blur(10px)",
+              WebkitBackdropFilter: "blur(10px)",
+            }}
+          >
+            <span
+              style={{
+                width: 7,
+                height: 7,
+                borderRadius: 999,
+                background: "#8FA1AB",
+              }}
+            />
+            <span
+              className="font-display text-[12px]"
+              style={{
+                color: "#C7D6DA",
+                letterSpacing: "0.2em",
+              }}
+            >
+              IDLE
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Status overlay – top-left */}
+      <div
+        className="absolute left-4 top-4 glass-panel glass-panel--strong"
+        style={{ maxWidth: 220, padding: 12 }}
+      >
+        <div className="eyebrow">Living Solasterid</div>
+        <div className="mt-1 text-[14px] font-display font-semibold" style={{ color: "var(--text-strong)" }}>
+          {activeCount} arms · {state.committees.length} committees
+        </div>
+        <div className="mt-1 text-[11.5px]" style={{ color: "var(--text-soft)" }}>
+          <span className="mono">{state.arms.filter((a) => a.status === "retired").length}</span> fossilized
+          {state.arms.some((a) => a.status === "probation") && (
+            <>
+              {" · "}
+              <span className="mono">
+                {state.arms.filter((a) => a.status === "probation").length}
+              </span>{" "}
+              probation
+            </>
+          )}
+        </div>
+        <div className="mt-1.5 text-[11px] mono" style={{ color: "var(--text-mute)" }}>
+          round {state.round}
+        </div>
+      </div>
+
+      {/* Hint — only when many arms and nothing selected */}
+      {activeCount > 8 && !selectedArmId && (
+        <div
+          className="absolute bottom-14 left-1/2 -translate-x-1/2 text-[12px] tracking-wide px-3 py-1 rounded-full"
+          style={{
+            color: "rgba(232,243,241,0.7)",
+            background: "rgba(7,21,35,0.55)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+            border: "1px solid rgba(143,255,230,0.12)",
+          }}
+        >
+          hover an arm to read its lens
+        </div>
+      )}
 
       {/* Arm detail drawer */}
       {selectedArm && (
@@ -427,31 +1046,23 @@ export function SolasteridCanvas({ state }: Props) {
         />
       )}
 
-      {/* Status overlay */}
-      <div className="absolute left-4 top-4 glass-panel p-3 text-xs" style={{ maxWidth: 190 }}>
-        <div className="text-glow-teal font-bold text-cyan-200 text-sm">Living Solasterid</div>
-        <div className="mt-1 text-slate-400">
-          <span className="text-cyan-300">{activeCount}</span> active
-          {" · "}
-          <span className="text-slate-500">{state.arms.filter((a) => a.status === "retired").length}</span> fossilized
-        </div>
-        <div className="mt-1 text-slate-600 text-[10px]">{state.committees.length} committees</div>
-        {activeCount > 12 && !selectedArmId && (
-          <div className="mt-1.5 text-[9px] text-slate-600 italic">tap an arm to inspect</div>
-        )}
-        {state.status === "running" && (
-          <motion.div
-            className="mt-2 text-[10px] text-teal-400"
-            animate={{ opacity: [0.5, 1, 0.5] }}
-            transition={{ duration: 1.2, repeat: Infinity }}
-          >◉ growing…</motion.div>
-        )}
-      </div>
-
-      {/* Tempseed preview */}
-      <div className="absolute bottom-0 left-0 right-0 rounded-none rounded-b-3xl border-t border-cyan-300/10 bg-slate-950/70 px-4 py-2 text-xs text-slate-400 backdrop-blur">
-        <span className="mr-1 text-cyan-700">seed:</span>
-        {state.tempseed.slice(0, 160)}{state.tempseed.length > 160 ? "…" : ""}
+      {/* Tempseed ribbon at the bottom */}
+      <div
+        className="absolute bottom-0 left-0 right-0 px-4 py-2.5 text-[12px]"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(3,17,31,0) 0%, rgba(3,17,31,0.85) 60%, rgba(3,17,31,0.95) 100%)",
+          borderTop: "1px solid rgba(143,255,230,0.08)",
+          color: "var(--text-soft)",
+        }}
+      >
+        <span className="eyebrow" style={{ marginRight: 8 }}>
+          seed
+        </span>
+        <span style={{ color: "var(--text)" }}>
+          {state.tempseed.slice(0, 180)}
+          {state.tempseed.length > 180 ? "…" : ""}
+        </span>
       </div>
     </section>
   );
