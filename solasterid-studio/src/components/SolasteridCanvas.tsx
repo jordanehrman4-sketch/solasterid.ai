@@ -527,7 +527,6 @@ function SpeechBubble({
       {/* bubble body via foreignObject = real text wrap */}
       <foreignObject x={bubbleX} y={bubbleY} width={W} height={H}>
         <div
-          xmlns="http://www.w3.org/1999/xhtml"
           style={{
             width: "100%",
             height: "100%",
