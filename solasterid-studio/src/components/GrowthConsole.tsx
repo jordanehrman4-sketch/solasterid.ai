@@ -67,12 +67,16 @@ function formatRelativeSeconds(savedAt: number | null): string {
  */
 function buildThoughtForRound(state: SolasteridState, isSeedRound: boolean): string {
   const cap = 24;
-  const head = (text: string) => {
+  // The seed can be very long (the full benchmark constitution). Showing 24
+  // words of it produced a tall bubble that stretched the canvas frame, so the
+  // seed gets a much tighter cap — just enough to recognize it's the seed.
+  const seedCap = 14;
+  const head = (text: string, words_cap = cap) => {
     const words = text.trim().split(/\s+/).filter(Boolean);
-    return words.slice(0, cap).join(" ") + (words.length > cap ? " …" : "");
+    return words.slice(0, words_cap).join(" ") + (words.length > words_cap ? " …" : "");
   };
   if (isSeedRound) {
-    return head(state.tempseed);
+    return head(state.tempseed, seedCap);
   }
   // Walk recent transcript backwards looking for a meaningful continuation.
   const recent = [...state.transcript].reverse();
@@ -80,7 +84,7 @@ function buildThoughtForRound(state: SolasteridState, isSeedRound: boolean): str
   if (speaker?.content) return head(speaker.content);
   const summary = recent.find((e) => e.phase === "round_summary");
   if (summary?.content) return head(summary.content);
-  if (state.round === 0) return head(state.tempseed);
+  if (state.round === 0) return head(state.tempseed, seedCap);
   return `Continuing from r${state.round}…`;
 }
 
@@ -122,6 +126,7 @@ export function GrowthConsole({ apiKey, onClearKey }: Props) {
   const [roundPhase, setRoundPhase] = useState<RoundPhase>("idle");
   const [activeCommitteeName, setActiveCommitteeName] = useState<string | null>(null);
   const [seedThoughtText, setSeedThoughtText] = useState<string | null>(null);
+  const [speakerSpeechText, setSpeakerSpeechText] = useState<string | null>(null);
   const [hiddenTranscriptIds, setHiddenTranscriptIds] = useState<Set<string>>(new Set());
 
   // Persistence: throttled save + UI indicator
@@ -322,6 +327,16 @@ export function GrowthConsole({ apiKey, onClearKey }: Props) {
 
     // ── Sun: the speakerbot speaks ────────────────────────────
     setRoundPhase("sun");
+    // Surface the speaker's verdict as a speech bubble on the creature (capped
+    // so it stays compact). This mirrors the thought bubble that opened the
+    // round — the resolution the user was previously only seeing in the
+    // transcript panel.
+    {
+      const verdict = (parsed.speaker_decision?.content ?? "").trim();
+      const words = verdict.split(/\s+/).filter(Boolean);
+      const headTxt = words.slice(0, 32).join(" ");
+      setSpeakerSpeechText(headTxt ? headTxt + (words.length > 32 ? " …" : "") : null);
+    }
     await delay(700);
     if (speakerEventId) {
       revealEvent(speakerEventId);
@@ -333,6 +348,7 @@ export function GrowthConsole({ apiKey, onClearKey }: Props) {
     // ── Dusk: water dims back ─────────────────────────────────
     setRoundPhase("dusk");
     setPhase("cooldown");
+    setSpeakerSpeechText(null);
     await delay(900);
 
     // Defensive: ensure nothing remains hidden if playback drifted.
@@ -372,6 +388,7 @@ export function GrowthConsole({ apiKey, onClearKey }: Props) {
             setRoundPhase("idle");
             setActiveCommitteeName(null);
             setSeedThoughtText(null);
+            setSpeakerSpeechText(null);
             setArmBubbles({});
             setHiddenTranscriptIds(new Set());
             setIsRunning(false);
@@ -399,6 +416,7 @@ export function GrowthConsole({ apiKey, onClearKey }: Props) {
       setRoundPhase("idle");
       setActiveCommitteeName(null);
       setSeedThoughtText(null);
+      setSpeakerSpeechText(null);
       setArmBubbles({});
       setHiddenTranscriptIds(new Set());
     }
@@ -423,6 +441,7 @@ export function GrowthConsole({ apiKey, onClearKey }: Props) {
     setRoundPhase("idle");
     setActiveCommitteeName(null);
     setSeedThoughtText(null);
+    setSpeakerSpeechText(null);
     setLiveStreamText("");
     setArmBubbles({});
     setHiddenTranscriptIds(new Set());
@@ -807,6 +826,7 @@ export function GrowthConsole({ apiKey, onClearKey }: Props) {
               roundPhase={roundPhase}
               activeCommitteeName={activeCommitteeName}
               seedThoughtText={seedThoughtText}
+              speakerSpeechText={speakerSpeechText}
             />
             <TranscriptPanel
               transcript={state.transcript}

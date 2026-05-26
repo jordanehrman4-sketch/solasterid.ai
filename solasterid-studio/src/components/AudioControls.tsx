@@ -113,6 +113,33 @@ export function AudioControls({ state }: Props) {
     }
   }, []);
 
+  // Audio is "on by default" — but browser autoplay policy forbids sound until
+  // the user has interacted with the page at least once. Rather than make them
+  // hunt for the "enable audio" button, we arm a one-shot listener that unlocks
+  // on the very first gesture anywhere (clicking "begin growth", a keypress, a
+  // tap). The explicit button stays as a visible fallback.
+  const unlockedRef = useRef(false);
+  useEffect(() => {
+    if (audio.unlocked) {
+      unlockedRef.current = true;
+      return;
+    }
+    const onFirstGesture = () => {
+      if (unlockedRef.current) return;
+      unlockedRef.current = true;
+      void unlockAudio();
+    };
+    const opts = { once: true, capture: true } as const;
+    window.addEventListener("pointerdown", onFirstGesture, opts);
+    window.addEventListener("keydown", onFirstGesture, opts);
+    window.addEventListener("touchstart", onFirstGesture, opts);
+    return () => {
+      window.removeEventListener("pointerdown", onFirstGesture, opts);
+      window.removeEventListener("keydown", onFirstGesture, opts);
+      window.removeEventListener("touchstart", onFirstGesture, opts);
+    };
+  }, [audio.unlocked, unlockAudio]);
+
   function handleUserRosesUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;

@@ -10,6 +10,7 @@
  * the full thing while the run is in memory.
  */
 import type { SolasteridState } from "./solasteridState";
+import { DEFAULT_SEED } from "./defaultSeed";
 
 const KEY = "solasterid:state:v1";
 const TRANSCRIPT_CAP = 300;
@@ -22,12 +23,52 @@ export type SavedSolasteridSnapshot = {
   savedAt: number; // epoch ms
 };
 
+/**
+ * The persisted `tempseed` can go stale: when we ship a new DEFAULT_SEED, a
+ * returning visitor still has the *old* default frozen in localStorage, so the
+ * studio keeps using it forever. This refreshes the seed to the current default
+ * — but ONLY when the user never hand-edited it. We detect a user edit by
+ * looking at the most recent seedHistory entry: if its source is "user_edit"
+ * and it matches the live tempseed, that seed is sacred and we leave it alone.
+ */
+function migrateSeed(state: SolasteridState): SolasteridState {
+  // Already on the current default — nothing to do.
+  if (state.tempseed === DEFAULT_SEED) return state;
+
+  const history = state.seedHistory ?? [];
+  const latest = history.length > 0 ? history[history.length - 1] : undefined;
+
+  // If the newest seed entry came from the user AND it's what's live right now,
+  // the current tempseed is a deliberate edit. Don't touch it.
+  const seedIsUserAuthored =
+    latest?.source === "user_edit" && latest.seed === state.tempseed;
+  if (seedIsUserAuthored) return state;
+
+  // Otherwise the live seed is a leftover default (or system) seed that predates
+  // the current DEFAULT_SEED. Refresh it and note the migration in history.
+  return {
+    ...state,
+    tempseed: DEFAULT_SEED,
+    seedHistory: [
+      ...history,
+      {
+        id: crypto.randomUUID(),
+        round: state.round,
+        seed: DEFAULT_SEED,
+        source: "default",
+        timestamp: new Date().toISOString(),
+      },
+    ],
+  };
+}
+
 export function loadSavedState(): SavedSolasteridSnapshot | null {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as SavedSolasteridSnapshot;
     if (!parsed?.state || typeof parsed.state.round !== "number") return null;
+    parsed.state = migrateSeed(parsed.state);
     return parsed;
   } catch {
     return null;

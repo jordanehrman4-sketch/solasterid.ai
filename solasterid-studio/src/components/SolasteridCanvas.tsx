@@ -33,6 +33,9 @@ type Props = {
   activeCommitteeName?: string | null;
   /** When set, shows a thought bubble above the creature with the seed. */
   seedThoughtText?: string | null;
+  /** When set (during the 'sun' phase), shows the speakerbot's verdict as a
+   *  speech bubble emerging from the creature — the resolution of the round. */
+  speakerSpeechText?: string | null;
 };
 
 const PHASE_BRIGHTNESS: Record<RoundPhase, number> = {
@@ -410,82 +413,6 @@ function CenterCreature({
   );
 }
 
-/* ─── Label box with leader line ────────────────────── */
-function LabelBox({
-  x,
-  y,
-  text,
-  color,
-  selected,
-  anchor,
-  fromX,
-  fromY,
-}: {
-  x: number;
-  y: number;
-  text: string;
-  color: string;
-  selected: boolean;
-  anchor: "start" | "middle" | "end";
-  fromX: number;
-  fromY: number;
-}) {
-  // Estimate text width to size the rounded box.
-  const charW = selected ? 7.1 : 6.4;
-  const pad = 8;
-  const w = Math.max(28, text.length * charW + pad * 2);
-  const h = selected ? 22 : 19;
-  const boxX =
-    anchor === "start"
-      ? x
-      : anchor === "end"
-      ? x - w
-      : x - w / 2;
-  const boxY = y - h / 2;
-  // Leader line endpoint snaps to nearest box edge
-  const targetX =
-    anchor === "start" ? boxX : anchor === "end" ? boxX + w : x;
-  const targetY = boxY + h / 2;
-  return (
-    <g>
-      <line
-        x1={fromX}
-        y1={fromY}
-        x2={targetX}
-        y2={targetY}
-        stroke={color}
-        strokeWidth={selected ? 1.1 : 0.7}
-        strokeDasharray={selected ? "0" : "2 3"}
-        opacity={selected ? 0.75 : 0.45}
-      />
-      <rect
-        x={boxX}
-        y={boxY}
-        rx={h / 2}
-        ry={h / 2}
-        width={w}
-        height={h}
-        fill="rgba(7,21,35,0.78)"
-        stroke={color}
-        strokeWidth={selected ? 1.2 : 0.8}
-        opacity={selected ? 1 : 0.92}
-      />
-      <text
-        x={boxX + w / 2}
-        y={boxY + h / 2 + 0.5}
-        textAnchor="middle"
-        dominantBaseline="middle"
-        fontFamily="Space Grotesk, Inter, sans-serif"
-        fontWeight={selected ? 600 : 500}
-        fontSize={selected ? 13 : 11.5}
-        fill={selected ? "#FFFFFF" : "#E8F3F1"}
-        letterSpacing="0.01em"
-      >
-        {text}
-      </text>
-    </g>
-  );
-}
 
 /* ─── Speech bubble at an arm tip ──────────────────── */
 function SpeechBubble({
@@ -619,6 +546,97 @@ function SpeechBubbleLayer({
   );
 }
 
+/* ─── Arm-name labels as an HTML overlay ──────────────────────
+   Previously these lived inside the creature SVG and were pushed onto a
+   ring 344px from center — which overflowed the 720px square viewBox at the
+   cardinal angles and got clipped (the "labels vanish over the kelp" bug,
+   since the kelp sits at those same edges). They also only appeared when
+   activeCount <= 8. Rendering them here, with the exact same percentage
+   positioning the speech bubbles use, fixes both: they're bound by the canvas
+   frame instead of the square SVG, they sit above all reef decoration, and
+   they're always visible. */
+function LabelLayer({
+  active,
+  cx,
+  cy,
+  svgSize,
+  swayDeg,
+  selectedArmId,
+  hoveredArmId,
+  hiddenArmIds,
+}: {
+  active: ArmPlacement[];
+  cx: number;
+  cy: number;
+  svgSize: number;
+  swayDeg: number;
+  selectedArmId: string | null;
+  hoveredArmId: string | null;
+  /** Arms currently showing a speech bubble — skip their label to avoid overlap. */
+  hiddenArmIds: Set<string>;
+}) {
+  const swayRad = (swayDeg * Math.PI) / 180;
+  const cosS = Math.cos(swayRad);
+  const sinS = Math.sin(swayRad);
+  // Nudge the label a little further out than the tip along the arm's angle so
+  // it clears the glowing tip, then clamp so it never hugs the frame edge.
+  const clamp = (v: number) => Math.max(4, Math.min(96, v));
+
+  return (
+    <div className="pointer-events-none absolute inset-0" style={{ zIndex: 5 }}>
+      {active.map((p) => {
+        if (hiddenArmIds.has(p.arm.id)) return null;
+        const isActiveLabel =
+          selectedArmId === p.arm.id || hoveredArmId === p.arm.id;
+        // Tip position with sway applied.
+        const dx = p.geometry.tip.x - cx;
+        const dy = p.geometry.tip.y - cy;
+        const tipX = cx + dx * cosS - dy * sinS;
+        const tipY = cy + dx * sinS + dy * cosS;
+        // Push outward from center a touch so the label sits just past the tip.
+        const rotatedAngle = p.angle + swayRad;
+        const outX = tipX + Math.cos(rotatedAngle) * 16;
+        const outY = tipY + Math.sin(rotatedAngle) * 16;
+        const left = clamp((outX / svgSize) * 100);
+        const top = clamp((outY / svgSize) * 100);
+        return (
+          <div
+            key={"lbl-" + p.arm.id}
+            className="absolute"
+            style={{
+              left: left + "%",
+              top: top + "%",
+              transform: "translate(-50%, -50%)",
+              whiteSpace: "nowrap",
+            }}
+          >
+            <span
+              className="rounded-full font-display"
+              style={{
+                display: "inline-block",
+                padding: isActiveLabel ? "3px 9px" : "2px 8px",
+                fontSize: isActiveLabel ? 12 : 11,
+                fontWeight: isActiveLabel ? 600 : 500,
+                lineHeight: 1.2,
+                color: isActiveLabel ? "#FFFFFF" : "#E8F3F1",
+                background: "rgba(7,21,35,0.82)",
+                border: `1px solid ${p.displayColor}${isActiveLabel ? "" : "AA"}`,
+                boxShadow: isActiveLabel
+                  ? `0 0 0 1px ${p.displayColor}55, 0 2px 8px rgba(0,0,0,0.35)`
+                  : "0 1px 4px rgba(0,0,0,0.3)",
+                letterSpacing: "0.01em",
+                transition: "all 140ms ease",
+              }}
+            >
+              {p.arm.name}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 /* ─── Helper: gently swaying transform ──────────────── */
 function useGentleSway() {
   // Slow back-and-forth tilt ± 2°. Updates at ~12fps so we don't burn cycles
@@ -644,6 +662,7 @@ export function SolasteridCanvas({
   roundPhase = "idle",
   activeCommitteeName = null,
   seedThoughtText = null,
+  speakerSpeechText = null,
 }: Props) {
   const svgSize = 720;
   const cx = svgSize / 2;
@@ -679,8 +698,6 @@ export function SolasteridCanvas({
   function handleArmClick(armId: string) {
     setSelectedArmId((prev) => (prev === armId ? null : armId));
   }
-
-  const showAllLabels = activeCount <= 8;
 
   return (
     <section
@@ -922,6 +939,18 @@ export function SolasteridCanvas({
                   onMouseEnter={() => setHoveredArmId(arm.id)}
                   onMouseLeave={() => setHoveredArmId(null)}
                 >
+                  {/* Invisible fat hit-area along the arm's centerline. The
+                      visible ribbon tapers to ~3px at the tip, which made it
+                      almost impossible to hover; this transparent ~26px stroke
+                      gives the whole arm a generous, reliable target. */}
+                  <path
+                    d={geometry.center}
+                    fill="none"
+                    stroke="transparent"
+                    strokeWidth={26}
+                    strokeLinecap="round"
+                    style={{ pointerEvents: "stroke" }}
+                  />
                   {/* Main ribbon body */}
                   <path
                     d={geometry.ribbon}
@@ -1006,49 +1035,10 @@ export function SolasteridCanvas({
           />
         </g>
 
-        {/* Labels + leader lines (NOT inside the sway group — they stay readable) */}
-        <g pointerEvents="none">
-          {active.map((p) => {
-            const isSelected = selectedArmId === p.arm.id;
-            const isHovered = hoveredArmId === p.arm.id;
-            const hasBubble = !!armBubbles[p.arm.id];
-            const show = isSelected || isHovered || showAllLabels;
-            if (!show || hasBubble) return null;
-            // Account for sway when placing the leader endpoint
-            const swayRad = (swayDeg * Math.PI) / 180;
-            const cosS = Math.cos(swayRad);
-            const sinS = Math.sin(swayRad);
-            // rotate tip around (cx,cy)
-            const dx = p.geometry.tip.x - cx;
-            const dy = p.geometry.tip.y - cy;
-            const tipX = cx + dx * cosS - dy * sinS;
-            const tipY = cy + dx * sinS + dy * cosS;
-            // Label position on a ring outside the creature, at the (rotated) angle
-            const rotatedAngle = p.angle + swayRad;
-            const ringR = maxArmLength + bodyRadius + 48;
-            const lx = cx + Math.cos(rotatedAngle) * ringR;
-            const ly = cy + Math.sin(rotatedAngle) * ringR;
-            const anchor: "start" | "middle" | "end" =
-              Math.cos(rotatedAngle) > 0.25
-                ? "start"
-                : Math.cos(rotatedAngle) < -0.25
-                ? "end"
-                : "middle";
-            return (
-              <LabelBox
-                key={"lbl-" + p.arm.id}
-                x={lx}
-                y={ly}
-                text={p.arm.name}
-                color={p.displayColor}
-                selected={isSelected}
-                anchor={anchor}
-                fromX={tipX}
-                fromY={tipY}
-              />
-            );
-          })}
-        </g>
+        {/* Arm-name labels are rendered as an HTML overlay below (LabelLayer),
+            not inside this SVG — that keeps them from being clipped by the
+            square viewBox at the edges (where the kelp lives) and lets them
+            stay persistently visible regardless of arm count. */}
 
         {/* Speech bubbles are rendered as an HTML overlay (see below), not
             inside this SVG, so they sit above the kelp and never get clipped
@@ -1063,6 +1053,20 @@ export function SolasteridCanvas({
         cy={cy}
         svgSize={svgSize}
         swayDeg={swayDeg}
+      />
+
+      {/* HTML label overlay — persistent arm names, never clipped by the SVG
+          viewBox or hidden behind the kelp. Arms showing a speech bubble skip
+          their label so the two don't stack on top of each other. */}
+      <LabelLayer
+        active={active}
+        cx={cx}
+        cy={cy}
+        svgSize={svgSize}
+        swayDeg={swayDeg}
+        selectedArmId={selectedArmId}
+        hoveredArmId={hoveredArmId}
+        hiddenArmIds={new Set(Object.keys(armBubbles))}
       />
 
       {/* AUTOPILOT badge — top of canvas, large + obvious */}
@@ -1205,7 +1209,17 @@ export function SolasteridCanvas({
               >
                 thinking…
               </div>
-              <div>{seedThoughtText}</div>
+              <div
+                style={{
+                  // Hard line-clamp so an unexpectedly long thought can never
+                  // grow the bubble (and thus the aquarium frame). Truncates
+                  // with an ellipsis instead.
+                  display: "-webkit-box",
+                  WebkitLineClamp: 3,
+                  WebkitBoxOrient: "vertical" as never,
+                  overflow: "hidden",
+                }}
+              >{seedThoughtText}</div>
             </div>
             {/* Thought trail descending toward the center of the creature */}
             <div className="flex flex-col items-center gap-1 mt-1">
@@ -1246,7 +1260,77 @@ export function SolasteridCanvas({
         )}
       </AnimatePresence>
 
-      {/* Status overlay – top-left */}
+      {/* Speaker verdict bubble — the resolution of the round. Emerges from the
+          creature during the 'sun' phase, mirroring the thought bubble that
+          opened it. White speech bubble with a downward tail toward the mouth. */}
+      <AnimatePresence>
+        {speakerSpeechText && roundPhase === "sun" && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.85, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.92, y: -6 }}
+            transition={{ duration: 0.5, ease: [0.2, 0.7, 0.2, 1] }}
+            className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center"
+            style={{
+              top: 96,
+              width: "min(82%, 360px)",
+              pointerEvents: "none",
+              zIndex: 7,
+            }}
+          >
+            <div
+              className="rounded-3xl px-4 py-3 text-[13px] leading-relaxed w-full"
+              style={{
+                background: "rgba(255,255,255,0.97)",
+                color: "#0A1626",
+                border: "1px solid rgba(7,21,35,0.4)",
+                boxShadow: "0 6px 20px rgba(255,255,255,0.5)",
+                textAlign: "center",
+                position: "relative",
+              }}
+            >
+              <div
+                className="eyebrow mb-1"
+                style={{
+                  color: "#B99CFF",
+                  fontSize: 9.5,
+                  letterSpacing: "0.14em",
+                }}
+              >
+                speakerbot
+              </div>
+              <div
+                style={{
+                  // Clamp so a long verdict can't grow the frame (same rule as
+                  // the thought bubble).
+                  display: "-webkit-box",
+                  WebkitLineClamp: 4,
+                  WebkitBoxOrient: "vertical" as never,
+                  overflow: "hidden",
+                }}
+              >
+                {speakerSpeechText}
+              </div>
+              {/* downward tail toward the creature */}
+              <div
+                style={{
+                  position: "absolute",
+                  left: "50%",
+                  bottom: -8,
+                  width: 0,
+                  height: 0,
+                  transform: "translateX(-50%)",
+                  borderLeft: "7px solid transparent",
+                  borderRight: "7px solid transparent",
+                  borderTop: "9px solid rgba(255,255,255,0.97)",
+                  filter: "drop-shadow(0 1px 0 rgba(7,21,35,0.4))",
+                }}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div
         className="absolute left-4 top-4"
         style={{
@@ -1282,7 +1366,7 @@ export function SolasteridCanvas({
       </div>
 
       {/* Hint — only when many arms and nothing selected */}
-      {activeCount > 8 && !selectedArmId && (
+      {!selectedArmId && (
         <div
           className="absolute bottom-14 left-1/2 -translate-x-1/2 text-[12px] tracking-wide px-3 py-1 rounded-full"
           style={{
@@ -1293,7 +1377,7 @@ export function SolasteridCanvas({
             border: "1px solid rgba(143,255,230,0.12)",
           }}
         >
-          hover an arm to read its lens
+          hover an arm to highlight it · click to read its lens
         </div>
       )}
 

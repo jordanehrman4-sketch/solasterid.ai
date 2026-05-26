@@ -111,7 +111,10 @@ function TranscriptCard({
       <p
         className="text-[12.5px] leading-relaxed"
         style={{
-          color: isSpeaker ? "#E2D6FF" : "var(--text)",
+          // 33% darker than the old #E2D6FF — that pale lavender washed out
+          // against the white glass panel (contrast ~1.37). #978FAB lands at
+          // ~3.07 while keeping the speaker's lavender identity.
+          color: isSpeaker ? "#978FAB" : "var(--text)",
           whiteSpace: "pre-wrap",
           wordBreak: "break-word",
           maxWidth: "100%",
