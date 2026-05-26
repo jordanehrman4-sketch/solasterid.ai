@@ -455,10 +455,10 @@ export function GrowthConsole({ apiKey, onClearKey }: Props) {
       <header
         className="sticky top-0 z-40 flex flex-wrap items-center justify-between gap-3 border-b px-5 py-3"
         style={{
-          background: "rgba(3,17,31,0.78)",
-          backdropFilter: "blur(18px) saturate(140%)",
-          WebkitBackdropFilter: "blur(18px) saturate(140%)",
-          borderColor: "rgba(143,255,230,0.08)",
+          background: "rgba(255,255,255,0.62)",
+          backdropFilter: "blur(14px) saturate(140%)",
+          WebkitBackdropFilter: "blur(14px) saturate(140%)",
+          borderColor: "rgba(10,33,56,0.10)",
         }}
       >
         <div className="flex items-center gap-4 min-w-0">
@@ -469,8 +469,7 @@ export function GrowthConsole({ apiKey, onClearKey }: Props) {
                 width: 10,
                 height: 10,
                 background:
-                  "radial-gradient(circle at 30% 30%, #8FFFE6, #64F5E6 60%, #0A4A55)",
-                boxShadow: "0 0 14px rgba(143,255,230,0.6)",
+                  "radial-gradient(circle at 30% 30%, #2E7F8A, #19314A 60%, #0E2A48)",
               }}
             />
             <h1
@@ -494,17 +493,17 @@ export function GrowthConsole({ apiKey, onClearKey }: Props) {
               <span className="chip-dot" /> r{state.round}
             </span>
             <span className="chip">
-              <span className="chip-dot" style={{ background: "#8FFFE6", boxShadow: "0 0 6px #8FFFE6" }} />
+              <span className="chip-dot" style={{ background: "#2E7F8A" }} />
               {activeCount} active
             </span>
             {retiredCount > 0 && (
               <span className="chip">
-                <span className="chip-dot" style={{ background: "#5A6E78", boxShadow: "none" }} />
+                <span className="chip-dot" style={{ background: "#6D8696" }} />
                 {retiredCount} fossil
               </span>
             )}
             <span className="chip">
-              <span className="chip-dot" style={{ background: "#FF9A76", boxShadow: "0 0 6px #FF9A76" }} />
+              <span className="chip-dot" style={{ background: "#B23E5C" }} />
               {state.committees.length} committees
             </span>
           </div>
@@ -528,7 +527,7 @@ export function GrowthConsole({ apiKey, onClearKey }: Props) {
           >
             <span
               className="chip-dot"
-              style={{ background: lastSavedAt ? "#A8E6B2" : "#5A6E78", boxShadow: lastSavedAt ? "0 0 6px #A8E6B2" : "none" }}
+              style={{ background: lastSavedAt ? "#2E7F8A" : "#6D8696" }}
             />
             saved {formatRelativeSeconds(lastSavedAt)}
           </span>
@@ -555,8 +554,8 @@ export function GrowthConsole({ apiKey, onClearKey }: Props) {
               className="mb-4 glass-panel flex flex-wrap items-center justify-between gap-3"
               style={{
                 padding: "10px 14px",
-                borderColor: "rgba(143,255,230,0.22)",
-                background: "rgba(143,255,230,0.05)",
+                borderColor: "rgba(10,33,56,0.20)",
+                background: "rgba(10,33,56,0.05)",
               }}
             >
               <div className="flex items-center gap-2 text-[12.5px]">
@@ -640,8 +639,8 @@ export function GrowthConsole({ apiKey, onClearKey }: Props) {
                     key={label}
                     className="py-2 px-1"
                     style={{
-                      background: "rgba(7,21,35,0.55)",
-                      border: "1px solid rgba(143,255,230,0.06)",
+                      background: "rgba(255,255,255,0.55)",
+                      border: "1px solid rgba(10,33,56,0.06)",
                       borderRadius: 14,
                     }}
                   >
@@ -674,7 +673,7 @@ export function GrowthConsole({ apiKey, onClearKey }: Props) {
                     exit={{ height: 0, opacity: 0 }}
                     className="overflow-hidden"
                   >
-                    <div className="mt-3 space-y-3 pt-3" style={{ borderTop: "1px solid rgba(143,255,230,0.08)" }}>
+                    <div className="mt-3 space-y-3 pt-3" style={{ borderTop: "1px solid rgba(10,33,56,0.08)" }}>
                       {/* Speed presets */}
                       <div>
                         <div className="mb-1.5 flex justify-between text-[10.5px]" style={{ color: "var(--text-soft)" }}>
@@ -692,8 +691,8 @@ export function GrowthConsole({ apiKey, onClearKey }: Props) {
                                 onClick={() => setRoundDelay(p.delay)}
                                 className="rounded-xl px-2 py-2 text-center transition-all"
                                 style={{
-                                  border: `1px solid ${sel ? "rgba(143,255,230,0.4)" : "rgba(143,255,230,0.08)"}`,
-                                  background: sel ? "rgba(100,245,230,0.06)" : "rgba(7,21,35,0.55)",
+                                  border: `1px solid ${sel ? "rgba(143,255,230,0.4)" : "rgba(10,33,56,0.08)"}`,
+                                  background: sel ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.55)",
                                 }}
                                 title={p.blurb}
                               >
@@ -731,8 +730,8 @@ export function GrowthConsole({ apiKey, onClearKey }: Props) {
                                 onClick={() => setSelectedModel(m.id)}
                                 className="rounded-xl px-2 py-1.5 text-left transition-all"
                                 style={{
-                                  border: `1px solid ${sel ? "rgba(143,255,230,0.4)" : "rgba(143,255,230,0.08)"}`,
-                                  background: sel ? "rgba(100,245,230,0.06)" : "rgba(7,21,35,0.55)",
+                                  border: `1px solid ${sel ? "rgba(143,255,230,0.4)" : "rgba(10,33,56,0.08)"}`,
+                                  background: sel ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.55)",
                                 }}
                               >
                                 <div
@@ -831,11 +830,11 @@ export function GrowthConsole({ apiKey, onClearKey }: Props) {
       >
         <div
           className="flex flex-wrap items-center justify-between gap-3 pt-4"
-          style={{ borderTop: "1px solid rgba(143,255,230,0.06)" }}
+          style={{ borderTop: "1px solid rgba(10,33,56,0.06)" }}
         >
           <div className="flex items-center gap-2">
             <span style={{ color: "var(--text-soft)" }}>
-              <em>Solasterid Studio</em> — grow a many-armed creature, take it home at r25.
+              <em>Solasterid Studio</em> — grow a many-armed creature, take it home at r50.
             </span>
           </div>
           <div className="flex items-center gap-3" style={{ color: "var(--text-mute)" }}>

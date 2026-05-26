@@ -50,7 +50,7 @@ export function MilestoneToast({ activeArmCount }: Props) {
                 background: "rgba(11,23,38,0.92)",
                 border: `1.5px solid ${m.color}55`,
                 color: m.color,
-                boxShadow: `0 8px 28px rgba(0,0,0,0.45), 0 0 28px ${m.color}24`,
+                boxShadow: "0 8px 22px rgba(255,255,255,0.5)",
                 backdropFilter: "blur(14px)",
                 WebkitBackdropFilter: "blur(14px)",
                 letterSpacing: "0.01em",

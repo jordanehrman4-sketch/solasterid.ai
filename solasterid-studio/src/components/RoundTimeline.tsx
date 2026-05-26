@@ -47,19 +47,19 @@ export function RoundTimeline({ state }: Props) {
               transition={{ duration: 0.3 }}
               className="flex items-center gap-2 rounded-xl px-2 py-1.5"
               style={{
-                background: isCurrent ? "rgba(100,245,230,0.07)" : "rgba(7,21,35,0.4)",
+                background: isCurrent ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.45)",
                 border: `1px solid ${
-                  isCurrent ? "rgba(100,245,230,0.25)" : "rgba(143,255,230,0.04)"
+                  isCurrent ? "rgba(100,245,230,0.25)" : "rgba(10,33,56,0.04)"
                 }`,
               }}
             >
               <div
                 className="flex h-6 w-7 flex-shrink-0 items-center justify-center rounded-lg text-[10px] font-display font-semibold mono"
                 style={{
-                  background: seeded ? "rgba(143,255,230,0.14)" : "rgba(7,21,35,0.8)",
+                  background: seeded ? "rgba(10,33,56,0.12)" : "rgba(7,21,35,0.8)",
                   color: seeded ? "var(--foam)" : "var(--text-mute)",
                   border: `1px solid ${
-                    seeded ? "rgba(143,255,230,0.3)" : "rgba(143,255,230,0.06)"
+                    seeded ? "rgba(10,33,56,0.28)" : "rgba(10,33,56,0.06)"
                   }`,
                 }}
               >

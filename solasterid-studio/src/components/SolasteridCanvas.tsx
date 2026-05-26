@@ -501,90 +501,121 @@ function SpeechBubble({
   tone: "thinking" | "speaking";
   delay: number;
 }) {
-  // We use foreignObject so HTML/CSS handles real text wrapping. Sized
-  // generously so 20-word reports never clip; the bubble grows downward
-  // and the tail points down to the arm tip.
-  const W = tone === "thinking" ? 70 : 240;
-  const H = tone === "thinking" ? 36 : 110;
-  const tailH = 10;
-  const bubbleX = x - W / 2;
-  const bubbleY = y - H - tailH - 6;
+  // Legacy in-SVG variant kept for back-compat. We render an HTML overlay
+  // (SpeechBubbleLayer below) instead so kelp / SVG viewBox can't clip it.
+  void x; void y; void text; void tone; void delay;
+  return null;
+}
+
+/**
+ * HTML overlay that draws a speech bubble per active arm using
+ * percentage-based positioning. Because it's outside the SVG, it sits on top
+ * of all reef decoration and is bound only by the canvas frame.
+ */
+function SpeechBubbleLayer({
+  active,
+  armBubbles,
+  cx,
+  cy,
+  svgSize,
+  swayDeg,
+}: {
+  active: ArmPlacement[];
+  armBubbles: Record<string, ArmBubble>;
+  cx: number;
+  cy: number;
+  svgSize: number;
+  swayDeg: number;
+}) {
   return (
-    <motion.g
-      initial={{ opacity: 0, scale: 0.7, y: 6 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.85, y: -6 }}
-      transition={{ duration: 0.4, delay, ease: [0.2, 0.7, 0.2, 1] }}
-      style={{ transformOrigin: `${x}px ${y}px` }}
-    >
-      {/* tail */}
-      <path
-        d={`M ${x - 6} ${bubbleY + H - 1} L ${x} ${y - 4} L ${x + 6} ${bubbleY + H - 1} Z`}
-        fill="rgba(255,255,255,0.96)"
-        stroke="rgba(7,21,35,0.5)"
-        strokeWidth={0.7}
-      />
-      {/* bubble body via foreignObject = real text wrap */}
-      <foreignObject x={bubbleX} y={bubbleY} width={W} height={H}>
-        <div
-          style={{
-            width: "100%",
-            height: "100%",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: tone === "thinking" ? "0 8px" : "8px 12px",
-            borderRadius: 14,
-            background: "rgba(255,255,255,0.96)",
-            border: "1px solid rgba(7,21,35,0.55)",
-            color: "#0A1626",
-            fontFamily: "Space Grotesk, Inter, sans-serif",
-            fontSize: tone === "thinking" ? 14 : 11.5,
-            lineHeight: 1.35,
-            fontWeight: tone === "thinking" ? 700 : 500,
-            textAlign: tone === "thinking" ? "center" : "left",
-            overflow: "hidden",
-            wordBreak: "break-word",
-            boxSizing: "border-box",
-            boxShadow: "0 3px 10px rgba(0,0,0,0.18)",
-          }}
-        >
-          {tone === "thinking" ? (
-            <span style={{ display: "inline-flex", gap: 3 }}>
-              <span style={{
-                display: "inline-block",
-                width: 5,
-                height: 5,
-                borderRadius: 999,
-                background: "#0A1626",
-                animation: "speech-dot 1.1s ease-in-out infinite",
-                animationDelay: "0s",
-              }} />
-              <span style={{
-                display: "inline-block",
-                width: 5,
-                height: 5,
-                borderRadius: 999,
-                background: "#0A1626",
-                animation: "speech-dot 1.1s ease-in-out infinite",
-                animationDelay: "0.18s",
-              }} />
-              <span style={{
-                display: "inline-block",
-                width: 5,
-                height: 5,
-                borderRadius: 999,
-                background: "#0A1626",
-                animation: "speech-dot 1.1s ease-in-out infinite",
-                animationDelay: "0.36s",
-              }} />
-            </span>
-          ) : (
-            text
-          )}
-        </div>
-      </foreignObject>
-    </motion.g>
+    <div className="pointer-events-none absolute inset-0" style={{ zIndex: 6 }}>
+      <AnimatePresence>
+        {active.map((p, i) => {
+          const bub = armBubbles[p.arm.id];
+          if (!bub) return null;
+          // Re-apply the parent's gentle sway to the tip coordinates so the
+          // bubble's tail still aligns with the arm.
+          const swayRad = (swayDeg * Math.PI) / 180;
+          const cosS = Math.cos(swayRad);
+          const sinS = Math.sin(swayRad);
+          const dx = p.geometry.tip.x - cx;
+          const dy = p.geometry.tip.y - cy;
+          const tipX = cx + dx * cosS - dy * sinS;
+          const tipY = cy + dx * sinS + dy * cosS;
+
+          // Convert to viewport percentages of the SVG's square (it preserves
+          // aspect ratio, so percentages of width/height of THIS overlay map
+          // 1:1 to the SVG's coordinate system because the overlay is sized
+          // to the SVG's rendered box via the parent <section>).
+          const left = (tipX / svgSize) * 100;
+          const top = (tipY / svgSize) * 100;
+
+          const isThinking = bub.tone === "thinking";
+          const bubbleW = isThinking ? 64 : 220;
+
+          return (
+            <motion.div
+              key={"bub-" + p.arm.id}
+              initial={{ opacity: 0, scale: 0.7, y: 6 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.85, y: -6 }}
+              transition={{ duration: 0.4, delay: Math.min(i * 0.04, 0.4), ease: [0.2, 0.7, 0.2, 1] }}
+              style={{
+                position: "absolute",
+                left: left + "%",
+                top: top + "%",
+                transform: "translate(-50%, -100%)",
+                marginTop: -8,
+                width: bubbleW,
+              }}
+            >
+              <div
+                style={{
+                  background: "rgba(255,255,255,0.97)",
+                  border: "1px solid rgba(7,21,35,0.55)",
+                  borderRadius: 14,
+                  padding: isThinking ? "6px 10px" : "8px 12px",
+                  color: "#0A1626",
+                  fontFamily: "Space Grotesk, Inter, sans-serif",
+                  fontSize: isThinking ? 14 : 12,
+                  lineHeight: 1.4,
+                  fontWeight: isThinking ? 700 : 500,
+                  textAlign: isThinking ? "center" : "left",
+                  wordBreak: "break-word",
+                  boxShadow: "0 4px 16px rgba(255,255,255,0.55)",
+                  position: "relative",
+                }}
+              >
+                {isThinking ? (
+                  <span style={{ display: "inline-flex", gap: 3 }}>
+                    <span style={{ display: "inline-block", width: 5, height: 5, borderRadius: 999, background: "#0A1626", animation: "speech-dot 1.1s ease-in-out infinite", animationDelay: "0s" }} />
+                    <span style={{ display: "inline-block", width: 5, height: 5, borderRadius: 999, background: "#0A1626", animation: "speech-dot 1.1s ease-in-out infinite", animationDelay: "0.18s" }} />
+                    <span style={{ display: "inline-block", width: 5, height: 5, borderRadius: 999, background: "#0A1626", animation: "speech-dot 1.1s ease-in-out infinite", animationDelay: "0.36s" }} />
+                  </span>
+                ) : (
+                  bub.text
+                )}
+                {/* tail */}
+                <div
+                  style={{
+                    position: "absolute",
+                    left: "50%",
+                    bottom: -7,
+                    width: 0,
+                    height: 0,
+                    transform: "translateX(-50%)",
+                    borderLeft: "6px solid transparent",
+                    borderRight: "6px solid transparent",
+                    borderTop: "8px solid rgba(255,255,255,0.97)",
+                    filter: "drop-shadow(0 1px 0 rgba(7,21,35,0.55))",
+                  }}
+                />
+              </div>
+            </motion.div>
+          );
+        })}
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -653,7 +684,7 @@ export function SolasteridCanvas({
 
   return (
     <section
-      className="relative overflow-hidden glass-panel"
+      className="relative overflow-hidden aquarium-frame"
       style={{ padding: 0, minHeight: 660 }}
     >
       {/* Background reef */}
@@ -1019,33 +1050,20 @@ export function SolasteridCanvas({
           })}
         </g>
 
-        {/* Speech bubbles — also outside sway group, but positioned using sway-rotated tips */}
-        <g pointerEvents="none">
-          <AnimatePresence>
-            {active.map((p, i) => {
-              const bub = armBubbles[p.arm.id];
-              if (!bub) return null;
-              const swayRad = (swayDeg * Math.PI) / 180;
-              const cosS = Math.cos(swayRad);
-              const sinS = Math.sin(swayRad);
-              const dx = p.geometry.tip.x - cx;
-              const dy = p.geometry.tip.y - cy;
-              const tipX = cx + dx * cosS - dy * sinS;
-              const tipY = cy + dx * sinS + dy * cosS;
-              return (
-                <SpeechBubble
-                  key={"bub-" + p.arm.id}
-                  x={tipX}
-                  y={tipY}
-                  text={bub.text}
-                  tone={bub.tone}
-                  delay={Math.min(i * 0.04, 0.4)}
-                />
-              );
-            })}
-          </AnimatePresence>
-        </g>
+        {/* Speech bubbles are rendered as an HTML overlay (see below), not
+            inside this SVG, so they sit above the kelp and never get clipped
+            by the viewBox. We still compute their anchor points here. */}
       </svg>
+
+      {/* HTML speech-bubble overlay — sits above the SVG so kelp/coral can't clip it. */}
+      <SpeechBubbleLayer
+        active={active}
+        armBubbles={armBubbles}
+        cx={cx}
+        cy={cy}
+        svgSize={svgSize}
+        swayDeg={swayDeg}
+      />
 
       {/* AUTOPILOT badge — top of canvas, large + obvious */}
       <div
@@ -1061,7 +1079,6 @@ export function SolasteridCanvas({
               background:
                 "linear-gradient(135deg, rgba(143,255,230,0.18), rgba(185,156,255,0.18))",
               border: "1.5px solid rgba(143,255,230,0.5)",
-              boxShadow: "0 0 24px rgba(143,255,230,0.25)",
               backdropFilter: "blur(12px)",
               WebkitBackdropFilter: "blur(12px)",
             }}
@@ -1074,7 +1091,6 @@ export function SolasteridCanvas({
                 width: 9,
                 height: 9,
                 background: "#8FFFE6",
-                boxShadow: "0 0 10px #8FFFE6",
               }}
             />
             <span
@@ -1082,7 +1098,6 @@ export function SolasteridCanvas({
               style={{
                 color: "#E8F3F1",
                 letterSpacing: "0.22em",
-                textShadow: "0 1px 6px rgba(0,0,0,0.5)",
               }}
             >
               AUTOPILOT
@@ -1131,18 +1146,17 @@ export function SolasteridCanvas({
               style={{
                 background: "rgba(11,23,38,0.85)",
                 border: "1px solid rgba(143,255,230,0.28)",
-                boxShadow: "0 6px 24px rgba(0,0,0,0.45)",
                 backdropFilter: "blur(14px)",
                 WebkitBackdropFilter: "blur(14px)",
                 maxWidth: 380,
               }}
             >
-              <span className="eyebrow" style={{ color: "var(--text-mute)" }}>
+              <span className="eyebrow" style={{ color: "#8FA1AB" }}>
                 committee
               </span>
               <span
                 className="font-display font-semibold text-[14px]"
-                style={{ color: "var(--text-strong)" }}
+                style={{ color: "#FFFFFF" }}
               >
                 {activeCommitteeName}
               </span>
@@ -1171,10 +1185,10 @@ export function SolasteridCanvas({
             <div
               className="rounded-3xl px-4 py-3 text-[12.5px] leading-relaxed w-full"
               style={{
-                background: "rgba(255,255,255,0.94)",
+                background: "rgba(255,255,255,0.97)",
                 color: "#0A1626",
                 border: "1px solid rgba(7,21,35,0.4)",
-                boxShadow: "0 6px 20px rgba(0,0,0,0.35)",
+                boxShadow: "0 4px 16px rgba(255,255,255,0.55)",
                 fontStyle: "italic",
                 textWrap: "pretty" as never,
                 textAlign: "center",
@@ -1234,14 +1248,23 @@ export function SolasteridCanvas({
 
       {/* Status overlay – top-left */}
       <div
-        className="absolute left-4 top-4 glass-panel glass-panel--strong"
-        style={{ maxWidth: 220, padding: 12 }}
+        className="absolute left-4 top-4"
+        style={{
+          maxWidth: 220,
+          padding: 12,
+          background: "rgba(11,23,38,0.78)",
+          border: "1px solid rgba(143,255,230,0.16)",
+          borderRadius: 18,
+          backdropFilter: "blur(10px)",
+          WebkitBackdropFilter: "blur(10px)",
+          color: "#E8F3F1",
+        }}
       >
-        <div className="eyebrow">Living Solasterid</div>
-        <div className="mt-1 text-[14px] font-display font-semibold" style={{ color: "var(--text-strong)" }}>
+        <div className="eyebrow" style={{ color: "#8FA1AB" }}>Living Solasterid</div>
+        <div className="mt-1 text-[14px] font-display font-semibold" style={{ color: "#FFFFFF" }}>
           {activeCount} arms · {state.committees.length} committees
         </div>
-        <div className="mt-1 text-[11.5px]" style={{ color: "var(--text-soft)" }}>
+        <div className="mt-1 text-[11.5px]" style={{ color: "#C7D6DA" }}>
           <span className="mono">{state.arms.filter((a) => a.status === "retired").length}</span> fossilized
           {state.arms.some((a) => a.status === "probation") && (
             <>
@@ -1253,7 +1276,7 @@ export function SolasteridCanvas({
             </>
           )}
         </div>
-        <div className="mt-1.5 text-[11px] mono" style={{ color: "var(--text-mute)" }}>
+        <div className="mt-1.5 text-[11px] mono" style={{ color: "#8FA1AB" }}>
           round {state.round}
         </div>
       </div>
@@ -1290,14 +1313,14 @@ export function SolasteridCanvas({
         style={{
           background:
             "linear-gradient(180deg, rgba(3,17,31,0) 0%, rgba(3,17,31,0.85) 60%, rgba(3,17,31,0.95) 100%)",
-          borderTop: "1px solid rgba(143,255,230,0.08)",
-          color: "var(--text-soft)",
+          borderTop: "1px solid rgba(143,255,230,0.10)",
+          color: "#8FA1AB",
         }}
       >
-        <span className="eyebrow" style={{ marginRight: 8 }}>
+        <span className="eyebrow" style={{ color: "#8FA1AB", marginRight: 8 }}>
           seed
         </span>
-        <span style={{ color: "var(--text)" }}>
+        <span style={{ color: "#C7D6DA" }}>
           {state.tempseed.slice(0, 180)}
           {state.tempseed.length > 180 ? "…" : ""}
         </span>

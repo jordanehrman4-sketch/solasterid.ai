@@ -222,7 +222,7 @@ export function ApiKeyGate({ onApiKeyReady }: Props) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7 }}
         className="glass-panel glass-panel--strong relative w-full max-w-md p-8"
-        style={{ borderColor: "rgba(143,255,230,0.22)" }}
+        style={{ borderColor: "rgba(10,33,56,0.20)" }}
       >
         <GrowingStarfish />
 
@@ -243,7 +243,7 @@ export function ApiKeyGate({ onApiKeyReady }: Props) {
         >
           Grow a starfish that thinks for you.
           <br />
-          Survive 25 rounds and take it home.
+          Survive 50 rounds and take it home.
         </p>
 
         <label
@@ -260,8 +260,8 @@ export function ApiKeyGate({ onApiKeyReady }: Props) {
               placeholder="sk-…"
               className="w-full rounded-2xl px-4 py-3 outline-none transition-all"
               style={{
-                background: "rgba(7,21,35,0.7)",
-                border: "1px solid rgba(143,255,230,0.16)",
+                background: "rgba(255,255,255,0.78)",
+                border: "1px solid rgba(10,33,56,0.16)",
                 color: "var(--text-strong)",
                 fontFamily: "JetBrains Mono, ui-monospace, monospace",
                 fontSize: 13,

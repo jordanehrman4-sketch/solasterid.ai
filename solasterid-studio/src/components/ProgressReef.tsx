@@ -21,8 +21,8 @@ function StatPill({
     <div
       className="flex items-center gap-2 px-3 py-1.5 rounded-full"
       style={{
-        background: "rgba(7,21,35,0.55)",
-        border: "1px solid rgba(143,255,230,0.08)",
+        background: "rgba(255,255,255,0.55)",
+        border: "1px solid rgba(10,33,56,0.08)",
       }}
     >
       <span
@@ -31,7 +31,6 @@ function StatPill({
           height: 6,
           borderRadius: 999,
           background: accent,
-          boxShadow: `0 0 6px ${accent}`,
         }}
       />
       <span className="text-[10.5px] eyebrow" style={{ letterSpacing: "0.14em" }}>
@@ -88,8 +87,8 @@ export function ProgressReef({ state }: Props) {
   const probation = state.arms.filter((a) => a.status === "probation").length;
 
   const round = state.round;
-  const exportPct = Math.min(100, (round / 25) * 100);
-  const exportRemaining = Math.max(0, 25 - round);
+  const exportPct = Math.min(100, (round / 50) * 100);
+  const exportRemaining = Math.max(0, 50 - round);
 
   // Next tempseed tide every 5 rounds (1, 5, 10, 15…). Compute rounds to next.
   const nextTide =
@@ -111,7 +110,7 @@ export function ProgressReef({ state }: Props) {
 
       <div className="mt-3 flex flex-col sm:flex-row gap-4">
         <ProgressRow
-          label="Take it home — export at r25"
+          label="Take it home — export at r50"
           caption={
             state.exportUnlocked
               ? "unlocked · ready to take your Solasterid home"

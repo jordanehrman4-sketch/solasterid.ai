@@ -57,14 +57,14 @@ export function ArmDetailPanel({ arm, committees, transcript, onClose }: Props) 
           maxHeight: "calc(100% - 120px)",
           padding: 16,
           borderColor: `${accent}44`,
-          boxShadow: `0 12px 36px rgba(0,0,0,0.5), 0 0 24px ${accent}22`,
+          boxShadow: "0 10px 28px rgba(10,33,56,0.35)",
         }}
       >
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <div
               className="h-3 w-3 flex-shrink-0 rounded-full"
-              style={{ background: accent, boxShadow: `0 0 8px ${accent}88` }}
+              style={{ background: accent }}
             />
             <span
               className="truncate font-display font-semibold text-[14.5px]"

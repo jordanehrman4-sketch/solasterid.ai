@@ -108,7 +108,7 @@ export function LiveStreamCard({ text, phase, elapsedMs, charsReceived }: Props)
           overflowY: "auto",
           padding: "10px 12px",
           background: "rgba(7, 21, 35, 0.55)",
-          border: "1px solid rgba(143,255,230,0.08)",
+          border: "1px solid rgba(10,33,56,0.08)",
           fontFamily: "JetBrains Mono, ui-monospace, monospace",
           fontSize: 11.5,
           lineHeight: 1.62,

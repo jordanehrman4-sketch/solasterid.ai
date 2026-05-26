@@ -1,4 +1,6 @@
 import type { GrowthModelResult } from "./modelSchemas";
+import { DEFAULT_SEED } from "./defaultSeed";
+export { DEFAULT_SEED };
 
 export type SolasteridStatus = "idle" | "running" | "paused" | "error" | "complete";
 export type ArmStatus = "active" | "probation" | "retired";
@@ -90,8 +92,7 @@ export type SolasteridState = {
   v4Globals?: Record<string, unknown>;
 };
 
-export const DEFAULT_SEED =
-  "Grow a useful, weird, resilient Solasterid architecture that develops specialist arms only when needed, preserves continuity, avoids bloat, and produces concrete outputs.";
+// (DEFAULT_SEED re-exported from ./defaultSeed)
 
 const COMMITTEE_COLORS: Record<string, string> = {
   core_reasoning: "#7dd3fc",
@@ -216,7 +217,7 @@ export function convertV4Architecture(v4: any): SolasteridState {
     ],
     mutations: [],
     visualEvents: [],
-    exportUnlocked: version >= 25,
+    exportUnlocked: version >= 50,
     v4Globals: v4.globals ?? {},
   };
 }
@@ -376,6 +377,6 @@ export function applyGrowthResult(state: SolasteridState, result: GrowthModelRes
     visualEvents: [...state.visualEvents, ...visualEvents],
     lastPromptInjectedSeedRound:
       nextRound === 1 || nextRound % 5 === 0 ? nextRound : state.lastPromptInjectedSeedRound,
-    exportUnlocked: nextRound >= 25 || state.exportUnlocked,
+    exportUnlocked: nextRound >= 50 || state.exportUnlocked,
   };
 }

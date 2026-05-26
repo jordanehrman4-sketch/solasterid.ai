@@ -83,7 +83,7 @@ export function ImportArchitecture({ onImport }: Props) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            style={{ background: "rgba(3,17,31,0.85)", backdropFilter: "blur(8px)" }}
+            style={{ background: "rgba(255,255,255,0.6)", backdropFilter: "blur(8px)" }}
             onClick={(e) => e.target === e.currentTarget && cancel()}
           >
             <motion.div
@@ -91,7 +91,7 @@ export function ImportArchitecture({ onImport }: Props) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 12 }}
               className="glass-panel glass-panel--strong w-full max-w-md p-6"
-              style={{ borderColor: "rgba(143,255,230,0.22)" }}
+              style={{ borderColor: "rgba(10,33,56,0.20)" }}
             >
               <div className="eyebrow">Import Architecture</div>
               <p className="mt-2 text-[12px] leading-relaxed" style={{ color: "var(--text-soft)" }}>
@@ -103,8 +103,8 @@ export function ImportArchitecture({ onImport }: Props) {
               <label
                 className="mt-4 flex cursor-pointer flex-col items-center rounded-2xl border border-dashed p-6 transition-colors"
                 style={{
-                  borderColor: "rgba(143,255,230,0.22)",
-                  background: "rgba(7,21,35,0.55)",
+                  borderColor: "rgba(10,33,56,0.20)",
+                  background: "rgba(255,255,255,0.55)",
                 }}
               >
                 <div className="text-2xl">🌊</div>
@@ -139,8 +139,8 @@ export function ImportArchitecture({ onImport }: Props) {
                   animate={{ opacity: 1, y: 0 }}
                   className="mt-4 rounded-2xl p-4"
                   style={{
-                    background: "rgba(143,255,230,0.06)",
-                    border: "1px solid rgba(143,255,230,0.22)",
+                    background: "rgba(10,33,56,0.06)",
+                    border: "1px solid rgba(10,33,56,0.20)",
                   }}
                 >
                   <div className="eyebrow mb-2">Architecture preview</div>

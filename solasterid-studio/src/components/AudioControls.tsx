@@ -42,7 +42,7 @@ function Toggle({
           height: 12,
           margin: 2,
           background: checked ? tint : "rgba(199,214,218,0.7)",
-          boxShadow: checked ? `0 0 8px ${tint}` : "none",
+          boxShadow: "none",
         }}
       />
     </button>
@@ -163,7 +163,7 @@ export function AudioControls({ state }: Props) {
       <div
         className={`mt-3 rounded-2xl p-3 transition-all ${meterPulse ? "roses-pulse" : ""}`}
         style={{
-          background: "rgba(7,21,35,0.55)",
+          background: "rgba(255,255,255,0.55)",
           border: "1px solid rgba(185,156,255,0.18)",
         }}
       >

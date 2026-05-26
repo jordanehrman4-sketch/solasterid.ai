@@ -19,7 +19,7 @@ export function AboutSheet({ open, onClose }: Props) {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: "rgba(3,17,31,0.85)", backdropFilter: "blur(10px)" }}
+          style={{ background: "rgba(255,255,255,0.6)", backdropFilter: "blur(10px)" }}
           onClick={(e) => e.target === e.currentTarget && onClose()}
         >
           <motion.div
@@ -28,7 +28,7 @@ export function AboutSheet({ open, onClose }: Props) {
             exit={{ opacity: 0, y: 12, scale: 0.97 }}
             transition={{ duration: 0.28, ease: [0.2, 0.7, 0.2, 1] }}
             className="glass-panel glass-panel--strong w-full max-w-lg p-7"
-            style={{ borderColor: "rgba(143,255,230,0.22)" }}
+            style={{ borderColor: "rgba(10,33,56,0.20)" }}
           >
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -54,8 +54,8 @@ export function AboutSheet({ open, onClose }: Props) {
             <div
               className="mt-4 rounded-2xl px-4 py-3"
               style={{
-                background: "rgba(143,255,230,0.05)",
-                border: "1px solid rgba(143,255,230,0.16)",
+                background: "rgba(10,33,56,0.05)",
+                border: "1px solid rgba(10,33,56,0.14)",
               }}
             >
               <p
@@ -117,8 +117,8 @@ export function AboutSheet({ open, onClose }: Props) {
                 tint="#FF9A76"
               />
               <LegendCard
-                title="Fossil at r25"
-                body="Survive 25 rounds and the export unlocks. The creature's fossil is saved. Your API key is not."
+                title="Fossil at r50"
+                body="Survive 50 rounds and the export unlocks. The creature's fossil is saved. Your API key is not."
                 tint="#FF6F91"
               />
             </div>
@@ -159,8 +159,8 @@ function LegendCard({
     <div
       className="rounded-2xl px-3 py-2.5"
       style={{
-        background: "rgba(7,21,35,0.55)",
-        border: "1px solid rgba(143,255,230,0.08)",
+        background: "rgba(255,255,255,0.55)",
+        border: "1px solid rgba(10,33,56,0.08)",
       }}
     >
       <div className="flex items-center gap-1.5">
@@ -170,7 +170,6 @@ function LegendCard({
             height: 7,
             borderRadius: 999,
             background: tint,
-            boxShadow: `0 0 6px ${tint}`,
           }}
         />
         <span

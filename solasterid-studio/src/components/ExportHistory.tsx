@@ -30,7 +30,7 @@ export function ExportHistory() {
   if (records.length === 0) {
     return (
       <p className="mt-3 text-[10px] text-slate-600 italic">
-        No local Solasterid fossils yet. Export after round 25 to start collecting.
+        No local Solasterid fossils yet. Export after round 50 to start collecting.
       </p>
     );
   }

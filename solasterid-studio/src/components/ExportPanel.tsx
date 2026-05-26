@@ -11,7 +11,7 @@ export function ExportPanel({ state }: Props) {
   const [message, setMessage] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
 
-  const roundsLeft = Math.max(0, 25 - state.round);
+  const roundsLeft = Math.max(0, 50 - state.round);
 
   async function exportNow() {
     if (!state.exportUnlocked || exporting) return;
@@ -57,13 +57,13 @@ export function ExportPanel({ state }: Props) {
       {!state.exportUnlocked ? (
         <div className="mt-3">
           <p className="text-[11.5px] leading-relaxed" style={{ color: "var(--text-soft)" }}>
-            The fossil lock holds until round 25.
+            The fossil lock holds until round 50.
           </p>
           <div className="mt-3 flex items-center gap-3">
             <div className="progress-track flex-1">
               <motion.div
                 className="progress-fill progress-fill--plankton"
-                animate={{ width: ((state.round / 25) * 100) + "%" }}
+                animate={{ width: ((state.round / 50) * 100) + "%" }}
                 transition={{ duration: 0.6 }}
               />
             </div>
@@ -72,7 +72,7 @@ export function ExportPanel({ state }: Props) {
             </span>
           </div>
           <p className="mt-2 text-[10.5px] italic" style={{ color: "var(--text-mute)" }}>
-            Survive 25 rounds to export your Solasterid.
+            Survive 50 rounds to export your Solasterid.
           </p>
         </div>
       ) : (

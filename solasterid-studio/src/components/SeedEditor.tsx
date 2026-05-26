@@ -87,10 +87,10 @@ export function SeedEditor({ tempseed, round, onApply }: Props) {
         <span
           className="rounded-full px-2.5 py-0.5 text-[10.5px] font-display"
           style={{
-            background: isInjectionRound ? "rgba(143,255,230,0.12)" : "rgba(255,255,255,0.04)",
+            background: isInjectionRound ? "rgba(10,33,56,0.12)" : "rgba(255,255,255,0.04)",
             color: isInjectionRound ? "var(--foam)" : "var(--text-mute)",
             border: `1px solid ${
-              isInjectionRound ? "rgba(143,255,230,0.32)" : "rgba(143,255,230,0.08)"
+              isInjectionRound ? "rgba(10,33,56,0.28)" : "rgba(10,33,56,0.08)"
             }`,
             letterSpacing: "0.08em",
           }}
@@ -111,8 +111,8 @@ export function SeedEditor({ tempseed, round, onApply }: Props) {
         placeholder="Describe the kind of Solasterid you want to grow…"
         className="mt-3 w-full resize-y px-3 py-2.5 text-[12px] outline-none transition-all"
         style={{
-          background: "rgba(7,21,35,0.7)",
-          border: "1px solid rgba(143,255,230,0.12)",
+          background: "rgba(255,255,255,0.78)",
+          border: "1px solid rgba(10,33,56,0.12)",
           borderRadius: 14,
           color: "var(--text)",
           fontFamily: "var(--font-sans)",
@@ -125,8 +125,8 @@ export function SeedEditor({ tempseed, round, onApply }: Props) {
       <div
         className="mt-2.5 rounded-2xl"
         style={{
-          background: "rgba(7,21,35,0.5)",
-          border: "1px solid rgba(143,255,230,0.08)",
+          background: "rgba(255,255,255,0.5)",
+          border: "1px solid rgba(10,33,56,0.08)",
         }}
       >
         <button
@@ -217,7 +217,7 @@ export function SeedEditor({ tempseed, round, onApply }: Props) {
           animate={{ opacity: 1 }}
           className="mt-3 rounded-2xl px-3 py-2 text-[11.5px]"
           style={{
-            background: "rgba(143,255,230,0.06)",
+            background: "rgba(10,33,56,0.06)",
             border: "1px solid rgba(143,255,230,0.25)",
             color: "var(--foam)",
           }}

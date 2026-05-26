@@ -78,7 +78,7 @@ function TranscriptCard({
               height: 8,
               borderRadius: 999,
               background: armColor,
-              boxShadow: `0 0 6px ${armColor}88`,
+              boxShadow: "none",
               flexShrink: 0,
             }}
           />
@@ -189,8 +189,8 @@ export function TranscriptPanel({
       <div
         className="flex items-center justify-between px-4 py-3"
         style={{
-          background: "rgba(3,17,31,0.55)",
-          borderBottom: "1px solid rgba(143,255,230,0.08)",
+          background: "rgba(255,255,255,0.45)",
+          borderBottom: "1px solid rgba(10,33,56,0.08)",
         }}
       >
         <div className="flex items-center gap-2">
