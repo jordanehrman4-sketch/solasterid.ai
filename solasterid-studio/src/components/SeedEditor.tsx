@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import type { CSSProperties } from "react";
+import { motion } from "framer-motion";
 
 type Props = {
   tempseed: string;
@@ -8,54 +7,9 @@ type Props = {
   onApply: (seed: string) => void;
 };
 
-/**
- * Quick-add steering nudges. Clicking one appends the phrase to the draft so
- * the user can either apply as-is or massage the wording first.
- */
-type SteerNudge = { id: string; label: string; phrase: string; tone: string };
-
-const STEER_LIST: SteerNudge[] = [
-  {
-    id: "precision",
-    label: "precision",
-    tone: "#8FFFE6",
-    phrase:
-      "Prioritize precision: cite exact numbers, name specific methods, and avoid vague claims.",
-  },
-  {
-    id: "web",
-    label: "real data",
-    tone: "#B0D8E8",
-    phrase:
-      "When real-world facts matter, do web searches and cite sources instead of guessing.",
-  },
-  {
-    id: "creative",
-    label: "creativity",
-    tone: "#C8B0E8",
-    phrase:
-      "Stay weird and high-variance: propose unusual angles before settling on the safe one.",
-  },
-  {
-    id: "prune",
-    label: "prune",
-    tone: "#FF9A98",
-    phrase:
-      "Focus on pruning: retire arms with overlapping lenses and consolidate committees.",
-  },
-  {
-    id: "grow",
-    label: "grow",
-    tone: "#A8E6B2",
-    phrase:
-      "Focus on growth: add specialist arms whenever a real gap appears, even if it costs bloat.",
-  },
-];
-
 export function SeedEditor({ tempseed, round, onApply }: Props) {
   const [draft, setDraft] = useState(tempseed);
   const [applied, setApplied] = useState(false);
-  const [showHints, setShowHints] = useState(true);
 
   useEffect(() => {
     setDraft(tempseed);
@@ -71,143 +25,46 @@ export function SeedEditor({ tempseed, round, onApply }: Props) {
     setTimeout(() => setApplied(false), 1800);
   }
 
-  function appendNudge(phrase: string) {
-    setDraft((prev) => {
-      const trimmed = prev.trim();
-      if (trimmed.includes(phrase)) return prev;
-      const sep = trimmed && !trimmed.endsWith(".") && !trimmed.endsWith("\n") ? ". " : trimmed ? " " : "";
-      return trimmed + sep + phrase;
-    });
-  }
-
   return (
-    <section className="glass-panel" style={{ padding: 16 }}>
+    <section className="glass-panel p-4" style={{ borderColor: "rgba(45,212,191,0.2)" }}>
       <div className="flex items-center justify-between">
-        <div className="eyebrow">Live Seed · tempseed</div>
-        <span
-          className="rounded-full px-2.5 py-0.5 text-[10.5px] font-display"
-          style={{
-            background: isInjectionRound ? "rgba(143,255,230,0.12)" : "rgba(255,255,255,0.04)",
-            color: isInjectionRound ? "var(--foam)" : "var(--text-mute)",
-            border: `1px solid ${
-              isInjectionRound ? "rgba(143,255,230,0.32)" : "rgba(143,255,230,0.08)"
-            }`,
-            letterSpacing: "0.08em",
-          }}
-        >
+        <h2 className="text-sm font-bold text-teal-200 text-glow-teal tracking-wide">LIVE SEED · tempseed</h2>
+        <span className="rounded-full px-2 py-0.5 text-[10px] font-mono"
+          style={{ background: isInjectionRound ? "rgba(45,212,191,0.2)" : "rgba(100,116,139,0.2)",
+                   color: isInjectionRound ? "#2dd4bf" : "#94a3b8", border: `1px solid ${isInjectionRound ? "rgba(45,212,191,0.4)" : "rgba(100,116,139,0.3)"}` }}>
           {isInjectionRound ? "tide incoming" : `tide in ${roundsUntilInjection}r`}
         </span>
       </div>
 
-      <p className="mt-2 text-[11.5px] leading-relaxed" style={{ color: "var(--text-soft)" }}>
-        The organism keeps swimming while you edit. Every 5 rounds, the current tempseed
-        is injected as a recurrent growth signal.
+      <p className="mt-2 text-[11px] text-slate-500 leading-relaxed">
+        The organism keeps swimming while you edit. Every 5 rounds, the current tempseed is injected as a recurrent growth signal.
       </p>
 
       <textarea
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         rows={5}
+        className="mt-3 w-full resize-y rounded-xl border border-teal-200/10 bg-slate-950/80 px-3 py-2 text-xs text-slate-200 outline-none transition-all focus:border-teal-400/40 focus:shadow-[0_0_10px_rgba(45,212,191,0.15)]"
         placeholder="Describe the kind of Solasterid you want to grow…"
-        className="mt-3 w-full resize-y px-3 py-2.5 text-[12px] outline-none transition-all"
-        style={{
-          background: "rgba(7,21,35,0.7)",
-          border: "1px solid rgba(143,255,230,0.12)",
-          borderRadius: 14,
-          color: "var(--text)",
-          fontFamily: "var(--font-sans)",
-          lineHeight: 1.55,
-          minHeight: 90,
-        }}
+        style={{ fontFamily: "inherit", minHeight: 80 }}
       />
-
-      {/* Steering hints — the creature only does what tempseed asks. */}
-      <div
-        className="mt-2.5 rounded-2xl"
-        style={{
-          background: "rgba(7,21,35,0.5)",
-          border: "1px solid rgba(143,255,230,0.08)",
-        }}
-      >
-        <button
-          type="button"
-          onClick={() => setShowHints((v) => !v)}
-          className="flex w-full items-center justify-between px-3 py-2"
-          style={{ color: "var(--text-soft)" }}
-        >
-          <span className="eyebrow">Steering hints</span>
-          <span className="text-[10.5px]" style={{ color: "var(--text-mute)" }}>
-            {showHints ? "▴ hide" : "▾ show"}
-          </span>
-        </button>
-        <AnimatePresence initial={false}>
-          {showHints && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.25 }}
-              className="overflow-hidden"
-            >
-              <div className="px-3 pb-3">
-                <p
-                  className="text-[11px] leading-relaxed"
-                  style={{ color: "var(--text-soft)", textWrap: "pretty" } as CSSProperties}
-                >
-                  The creature only does what the seed asks for. If you want
-                  precision, ask for it. If you want real data via web search,
-                  ask for it. If you want it to be creative, ask. If you want
-                  it to prune itself, ask. If you want it to focus on growth,
-                  ask. Tap a hint to append a starting phrase — you can edit
-                  the wording before applying.
-                </p>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {STEER_LIST.map((n) => (
-                    <button
-                      key={n.id}
-                      type="button"
-                      onClick={() => appendNudge(n.phrase)}
-                      className="rounded-full px-2.5 py-1 text-[10.5px] font-display transition-colors"
-                      style={{
-                        background: n.tone + "12",
-                        color: n.tone,
-                        border: `1px solid ${n.tone}3A`,
-                        letterSpacing: "0.06em",
-                      }}
-                      title={n.phrase}
-                    >
-                      + {n.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
 
       <div className="mt-3 flex items-center gap-2">
         <motion.button
-          whileHover={{ y: -1 }}
-          whileTap={{ y: 1 }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.96 }}
           onClick={handleApply}
-          className="btn"
-          style={{
-            background: applied
-              ? "linear-gradient(135deg, #A8E6B2, #64F5E6)"
-              : "linear-gradient(135deg, #64F5E6, #8FFFE6)",
-            color: "#03111F",
-            border: "1px solid rgba(143,255,230,0.45)",
-            fontWeight: 600,
-          }}
+          className="rounded-xl px-4 py-2 text-sm font-bold text-slate-950 transition-all"
+          style={{ background: applied ? "linear-gradient(135deg, #4ade80, #0d9488)" : "linear-gradient(135deg, #2dd4bf, #0891b2)" }}
         >
           {applied ? "✓ Applied" : "Apply tempseed"}
         </motion.button>
+
         <button
           onClick={() => setDraft(tempseed)}
-          className="btn btn-ghost"
+          className="rounded-xl px-3 py-2 text-xs text-slate-500 hover:text-slate-300 transition-colors"
         >
-          reset
+          Reset
         </button>
       </div>
 
@@ -215,15 +72,9 @@ export function SeedEditor({ tempseed, round, onApply }: Props) {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="mt-3 rounded-2xl px-3 py-2 text-[11.5px]"
-          style={{
-            background: "rgba(143,255,230,0.06)",
-            border: "1px solid rgba(143,255,230,0.25)",
-            color: "var(--foam)",
-          }}
+          className="mt-3 rounded-xl border border-teal-400/30 bg-teal-950/30 px-3 py-2 text-[11px] text-teal-300"
         >
-          Next round is a full seed injection tide. The current tempseed will be
-          injected as <span className="mono">seed=&lt;tempseed&gt;</span>.
+          Next round is a full seed injection tide. The current tempseed will be injected as seed=&lt;tempseed&gt;.
         </motion.div>
       )}
     </section>
