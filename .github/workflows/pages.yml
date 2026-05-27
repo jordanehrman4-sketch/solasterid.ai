@@ -33,6 +33,8 @@ jobs:
 
       - name: Build
         working-directory: solasterid-studio
+        env:
+          VITE_ARCHITECTURE_COLLECTOR_URL: https://solasterid-architecture-collector.solasterid.workers.dev
         run: npm run build
 
       - name: Upload Pages artifact
