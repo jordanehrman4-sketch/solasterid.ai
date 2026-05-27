@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "exportId": "manual-test-fossil",
+  "createdAt": "2026-05-26T00:00:00.000Z",
+  "privacy": {
+    "openaiApiKeyIncluded": false,
+    "seedTextIncluded": false,
+    "transcriptIncluded": false,
+    "fullStateIncluded": false
+  },
+  "architecture": {
+    "arms": [],
+    "committees": [],
+    "mutations": []
+  },
+  "export": {
+    "filename": "manual-test.zip",
+    "round": 50,
+    "version": 50
+  },
+  "metrics": {},
+  "seedFingerprint": {
+    "sha256": null,
+    "length": 0,
+    "historyCount": 0
+  },
+  "source": {
+    "app": "solasterid-studio",
+    "origin": "manual-test"
+  }
+}
