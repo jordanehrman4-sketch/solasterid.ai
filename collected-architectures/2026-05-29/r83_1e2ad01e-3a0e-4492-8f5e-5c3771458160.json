@@ -1,0 +1,269 @@
+{
+  "schemaVersion": 1,
+  "exportId": "1e2ad01e-3a0e-4492-8f5e-5c3771458160",
+  "createdAt": "2026-05-29T23:28:02.179Z",
+  "source": {
+    "app": "solasterid-studio",
+    "origin": "https://jordanehrman4-sketch.github.io"
+  },
+  "privacy": {
+    "openaiApiKeyIncluded": false,
+    "seedTextIncluded": false,
+    "transcriptIncluded": false,
+    "fullStateIncluded": false
+  },
+  "export": {
+    "filename": "solasterid_r83_1780097282179.zip",
+    "round": 83,
+    "version": 83
+  },
+  "metrics": {
+    "activeArmCount": 8,
+    "probationArmCount": 1,
+    "retiredArmCount": 1,
+    "totalArmCount": 10,
+    "committeeCount": 1,
+    "mutationCount": 8,
+    "seedEditCount": 3,
+    "transcriptEventCount": 548,
+    "visualEventCount": 151
+  },
+  "seedFingerprint": {
+    "sha256": "639332c07fc1c9c9292138178166ae02d859a76e0dbccb0f71575c895e2d5fca",
+    "length": 271,
+    "historyCount": 3
+  },
+  "architecture": {
+    "arms": [
+      {
+        "id": "arm_1",
+        "name": "Literalist",
+        "role": "Exact wording, scope, definitions, formatting constraints, and output contracts.",
+        "committeeIds": [
+          "committee_core"
+        ],
+        "status": "active",
+        "createdRound": 0,
+        "color": "#7dd3fc"
+      },
+      {
+        "id": "arm_3",
+        "name": "Mechanic",
+        "role": "Implementation feasibility, architecture, runtime, code shape, and operational state.",
+        "committeeIds": [
+          "committee_core"
+        ],
+        "status": "active",
+        "createdRound": 0,
+        "color": "#5eead4"
+      },
+      {
+        "id": "arm_3d",
+        "name": "Dreamer",
+        "role": "Speculative, creative, high-variance possibilities.",
+        "committeeIds": [
+          "committee_core"
+        ],
+        "status": "probation",
+        "createdRound": 0,
+        "color": "#f0abfc"
+      },
+      {
+        "id": "arm_4",
+        "name": "Adversary",
+        "role": "Contradictions, overclaims, safety problems, epistemic risk, failure modes.",
+        "committeeIds": [
+          "committee_core"
+        ],
+        "status": "active",
+        "createdRound": 0,
+        "color": "#fb7185"
+      },
+      {
+        "id": "arm_5",
+        "name": "Verifier",
+        "role": "Output validity, evidence, schemas, and export readiness.",
+        "committeeIds": [
+          "committee_core"
+        ],
+        "status": "active",
+        "createdRound": 0,
+        "color": "#fde68a"
+      },
+      {
+        "id": "arm_6_r1",
+        "name": "Moroccan Art Historian",
+        "role": "Specialized reasoning lens on Moroccan art history, architecture, craft, ornament, modernism, and regional cultural exchanges to ground image interpretation and educational context.",
+        "committeeIds": [],
+        "status": "active",
+        "createdRound": 1,
+        "color": "#c4b5fd"
+      },
+      {
+        "id": "arm_7_r1",
+        "name": "Cultural Appropriateness Reviewer",
+        "role": "Analyzes religious, political, cultural, and age-appropriateness risks; flags sacred motifs, controversy, and legal sensitivities for escalation and review.",
+        "committeeIds": [],
+        "status": "active",
+        "createdRound": 1,
+        "color": "#fdba74"
+      },
+      {
+        "id": "arm_8_r3",
+        "name": "Moroccan Craft & Architecture Symbolism Specialist",
+        "role": "Specialized reasoning lens on Moroccan vernacular craft techniques, symbolic ornamentation, and architectural motifs to support enriched visual and cultural interpretation.",
+        "committeeIds": [],
+        "status": "retired",
+        "createdRound": 3,
+        "color": "#86efac",
+        "retiredRound": 8
+      },
+      {
+        "id": "arm_9_r12",
+        "name": "Moroccan Digital Diaspora Media Specialist",
+        "role": "Specialized reasoning lens analyzing Moroccan diasporic digital media, hybrid cultural expressions, and emergent contested motifs in digital-native art and communication channels to enhance domain coverage and risk flagging.",
+        "committeeIds": [],
+        "status": "active",
+        "createdRound": 12,
+        "color": "#67e8f9"
+      },
+      {
+        "id": "arm_10_r31",
+        "name": "Moroccan Diaspora Urban Cultural Motifs Specialist",
+        "role": "Specialized reasoning lens focused on Moroccan diaspora urban cultural motifs, hybrid street expressions, and emergent contested patterns in urban diaspora contexts to close rubric gaps and enhance risk escalation accuracy.",
+        "committeeIds": [],
+        "status": "active",
+        "createdRound": 31,
+        "color": "#a78bfa"
+      }
+    ],
+    "committees": [
+      {
+        "id": "committee_core",
+        "name": "Core Radial Committee",
+        "purpose": "Initial five-arm deliberative structure.",
+        "armIds": [
+          "arm_1",
+          "arm_3",
+          "arm_3d",
+          "arm_4",
+          "arm_5"
+        ],
+        "createdRound": 0,
+        "color": "#22d3ee",
+        "layer": 0
+      }
+    ],
+    "mutations": [
+      {
+        "id": "de3a7dbe-51b6-4378-85b0-ab67c6688d17",
+        "round": 1,
+        "type": "add_arm",
+        "summary": "The core arms lack domain expertise required to interpret Moroccan visual culture and contextualize artworks for AMU.",
+        "payload": {
+          "type": "add_arm",
+          "name": "Moroccan Art Historian",
+          "role": "Specialized reasoning lens on Moroccan art history, architecture, craft, ornament, modernism, and regional cultural exchanges to ground image interpretation and educational context.",
+          "reason": "The core arms lack domain expertise required to interpret Moroccan visual culture and contextualize artworks for AMU.",
+          "payload": {}
+        },
+        "timestamp": "2026-05-29T22:32:52.268Z"
+      },
+      {
+        "id": "808aac19-7011-4985-889d-55544cf642e8",
+        "round": 1,
+        "type": "add_arm",
+        "summary": "To build the caution rubric and enforce no overstepping on sensitive cultural or legal boundaries early in the workflow.",
+        "payload": {
+          "type": "add_arm",
+          "name": "Cultural Appropriateness Reviewer",
+          "role": "Analyzes religious, political, cultural, and age-appropriateness risks; flags sacred motifs, controversy, and legal sensitivities for escalation and review.",
+          "reason": "To build the caution rubric and enforce no overstepping on sensitive cultural or legal boundaries early in the workflow.",
+          "payload": {}
+        },
+        "timestamp": "2026-05-29T22:32:52.268Z"
+      },
+      {
+        "id": "45b828ee-69fb-4146-93bb-72533d2494f8",
+        "round": 2,
+        "type": "probation_arm",
+        "summary": "The Dreamer arm produces useful but currently ungrounded speculative content that risks epistemic drift; probation will enforce tighter output constraints pending stronger domain grounding.",
+        "payload": {
+          "type": "probation_arm",
+          "target_id": "arm_3d",
+          "reason": "The Dreamer arm produces useful but currently ungrounded speculative content that risks epistemic drift; probation will enforce tighter output constraints pending stronger domain grounding.",
+          "payload": {}
+        },
+        "timestamp": "2026-05-29T22:33:11.884Z"
+      },
+      {
+        "id": "993a6fcb-0246-47f2-813b-fc10e56e341c",
+        "round": 3,
+        "type": "add_arm",
+        "summary": "New domain gaps in craft and architectural symbolism have emerged, requiring targeted specialist expertise to maintain cultural and art-historical accuracy.",
+        "payload": {
+          "type": "add_arm",
+          "name": "Moroccan Craft & Architecture Symbolism Specialist",
+          "role": "Specialized reasoning lens on Moroccan vernacular craft techniques, symbolic ornamentation, and architectural motifs to support enriched visual and cultural interpretation.",
+          "reason": "New domain gaps in craft and architectural symbolism have emerged, requiring targeted specialist expertise to maintain cultural and art-historical accuracy.",
+          "payload": {}
+        },
+        "timestamp": "2026-05-29T22:33:43.499Z"
+      },
+      {
+        "id": "a1a7032b-fb09-4763-a479-cd18a4d6e8a9",
+        "round": 8,
+        "type": "retire_arm",
+        "summary": "The Moroccan Craft & Architecture Symbolism Specialist role overlaps significantly with the expanded remit of the Moroccan Art Historian, creating redundancy; retiring to streamline specialist domain coverage and reduce bloat.",
+        "payload": {
+          "type": "retire_arm",
+          "target_id": "arm_8_r3",
+          "reason": "The Moroccan Craft & Architecture Symbolism Specialist role overlaps significantly with the expanded remit of the Moroccan Art Historian, creating redundancy; retiring to streamline specialist domain coverage and reduce bloat.",
+          "payload": {}
+        },
+        "timestamp": "2026-05-29T22:35:36.271Z"
+      },
+      {
+        "id": "3cb95253-d6dc-4c33-985e-ef0b500f15f9",
+        "round": 12,
+        "type": "add_arm",
+        "summary": "Emergent domain gap identified by Moroccan Art Historian in digital diaspora cultural flows requiring specialized expertise to maintain nuanced risk and escalation rubric accuracy.",
+        "payload": {
+          "type": "add_arm",
+          "name": "Moroccan Digital Diaspora Media Specialist",
+          "role": "Specialized reasoning lens analyzing Moroccan diasporic digital media, hybrid cultural expressions, and emergent contested motifs in digital-native art and communication channels to enhance domain coverage and risk flagging.",
+          "reason": "Emergent domain gap identified by Moroccan Art Historian in digital diaspora cultural flows requiring specialized expertise to maintain nuanced risk and escalation rubric accuracy.",
+          "payload": {}
+        },
+        "timestamp": "2026-05-29T22:37:22.131Z"
+      },
+      {
+        "id": "ed47fd45-cf3d-48eb-99fa-e283cc741aa4",
+        "round": 31,
+        "type": "add_arm",
+        "summary": "A domain gap identified in the nuanced hybrid diaspora urban motifs that existing arms cannot fully capture, risking rubric incompleteness and epistemic drift.",
+        "payload": {
+          "type": "add_arm",
+          "name": "Moroccan Diaspora Urban Cultural Motifs Specialist",
+          "role": "Specialized reasoning lens focused on Moroccan diaspora urban cultural motifs, hybrid street expressions, and emergent contested patterns in urban diaspora contexts to close rubric gaps and enhance risk escalation accuracy.",
+          "reason": "A domain gap identified in the nuanced hybrid diaspora urban motifs that existing arms cannot fully capture, risking rubric incompleteness and epistemic drift.",
+          "payload": {}
+        },
+        "timestamp": "2026-05-29T22:46:35.543Z"
+      },
+      {
+        "id": "9c57ab2b-0841-4d90-abe2-5ca52b3798ae",
+        "round": 34,
+        "type": "probation_arm",
+        "summary": "Epistemic drift signals in Dreamer arm output risk compromising analytic precision during critical diaspora urban motif integration; probation extension will enforce stricter domain grounding.",
+        "payload": {
+          "type": "probation_arm",
+          "target_id": "arm_3d",
+          "reason": "Epistemic drift signals in Dreamer arm output risk compromising analytic precision during critical diaspora urban motif integration; probation extension will enforce stricter domain grounding.",
+          "payload": {}
+        },
+        "timestamp": "2026-05-29T22:48:15.709Z"
+      }
+    ]
+  }
+}
