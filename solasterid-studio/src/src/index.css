@@ -1,0 +1,308 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────────────────────────
+   Solasterid Studio — light tidepool tone
+   Surface is a dusty aquamarine; the aquarium
+   itself stays deep ocean inside its frame.
+   ───────────────────────────────────────────── */
+:root {
+  /* Page surface */
+  --surface:        #99C5C4;   /* dusty aquamarine */
+  --surface-soft:   #AED4D2;
+  --surface-strong: #80B3B2;
+
+  /* Deep ocean (kept for the aquarium frame only) */
+  --ink:     #061C2E;
+  --abyss:   #0A2138;
+  --glass:   #0E2A48;
+
+  /* Bioluminescence (used inside the aquarium only) */
+  --cyan:    #64F5E6;
+  --foam:    #8FFFE6;
+  --lavender:#B99CFF;
+  --coral:   #FF6F91;
+  --tangerine:#FF9A76;
+  --plankton:#FFD166;
+  --kelp:    #6BAA75;
+
+  /* Text — dark on light */
+  --text-strong: #0A2138;
+  --text:        #19314A;
+  --text-soft:   #3B5670;
+  --text-mute:   #6D8696;
+
+  /* Panels */
+  --panel-bg:        rgba(255, 255, 255, 0.78);
+  --panel-bg-strong: rgba(255, 255, 255, 0.92);
+  --panel-border:    rgba(10, 33, 56, 0.10);
+  --panel-shadow:    0 6px 22px rgba(255, 255, 255, 0.55);
+
+  /* Typography */
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  --font-display: "Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, SFMono-Regular,
+    Menlo, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background: var(--surface);
+}
+
+/* Numerals & IDs */
+.num, .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* Display headings */
+.display {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.005em;
+}
+
+.eyebrow {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+
+/* ───── Scrollbar ───── */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(10, 33, 56, 0.18);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(10, 33, 56, 0.32);
+  background-clip: padding-box;
+}
+
+/* ───── Glass panels ─────
+   Soft white cards floating on the aquamarine surface.
+   The drop-shadow is white, not black, to feel "ocean-foam
+   lifted" rather than "Material Design 2014".  */
+.glass-panel {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  backdrop-filter: blur(14px) saturate(120%);
+  -webkit-backdrop-filter: blur(14px) saturate(120%);
+  border-radius: 20px;
+  box-shadow: var(--panel-shadow);
+  color: var(--text);
+}
+.glass-panel--strong {
+  background: var(--panel-bg-strong);
+  border-color: rgba(10, 33, 56, 0.14);
+}
+
+/* Variants now share the same base — no colored halos. */
+.glass-panel--coral, .glass-panel--cyan, .glass-panel--lavender { box-shadow: var(--panel-shadow); }
+
+/* ───── Buttons ─────
+   Flat, calm. No glow. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 12px;
+  padding: 8px 14px;
+  font-size: 12.5px;
+  font-weight: 500;
+  font-family: var(--font-display);
+  letter-spacing: 0.01em;
+  transition: transform 120ms ease, background 200ms ease, border-color 200ms ease, color 200ms ease;
+  cursor: pointer;
+  user-select: none;
+  border: 1px solid rgba(10, 33, 56, 0.14);
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--text);
+}
+.btn:hover { border-color: rgba(10, 33, 56, 0.28); background: rgba(255, 255, 255, 0.78); color: var(--text-strong); }
+.btn:active { transform: translateY(1px); }
+.btn[disabled] { opacity: 0.42; cursor: not-allowed; }
+
+.btn-primary {
+  background: #0E2A48;
+  color: #FFFFFF;
+  border-color: #0E2A48;
+  font-weight: 600;
+}
+.btn-primary:hover { background: #19314A; color: #FFFFFF; border-color: #19314A; }
+
+.btn-ghost {
+  background: transparent;
+  border-color: rgba(10, 33, 56, 0.10);
+  color: var(--text-soft);
+}
+.btn-ghost:hover { background: rgba(255, 255, 255, 0.4); color: var(--text); }
+
+.btn-coral {
+  background: #B23E5C;
+  color: #FFFFFF;
+  border-color: #B23E5C;
+  font-weight: 600;
+}
+
+/* ───── Progress / meters ───── */
+.progress-track {
+  position: relative;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(10, 33, 56, 0.10);
+  overflow: hidden;
+}
+.progress-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #2E7F8A, #4FB4A9);
+  transition: width 350ms ease;
+}
+.progress-fill--coral { background: linear-gradient(90deg, #8FA1C9, #D88B9C, #E08A6E); }
+.progress-fill--plankton { background: linear-gradient(90deg, #E8B85C, #6BB3A6); }
+
+.progress-indeterminate::after {
+  content: "";
+  position: absolute;
+  top: 0; bottom: 0; left: 0;
+  width: 35%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(46, 127, 138, 0.55), transparent);
+  animation: indeterminate 1.5s ease-in-out infinite;
+}
+@keyframes indeterminate {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(380%); }
+}
+
+/* ───── Chips ───── */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  font-family: var(--font-display);
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(10, 33, 56, 0.12);
+  color: var(--text-soft);
+}
+.chip-dot {
+  width: 6px; height: 6px; border-radius: 999px;
+  background: #2E7F8A;
+}
+
+/* ───── Inputs ───── */
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  background: transparent;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  background: rgba(10, 33, 56, 0.12);
+  border-radius: 999px;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px; height: 14px;
+  border-radius: 999px;
+  background: #FFFFFF;
+  border: 2px solid #0E2A48;
+  margin-top: -5px;
+  cursor: pointer;
+}
+
+textarea, input[type="text"], input[type="password"], select {
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(10, 33, 56, 0.14);
+  border-radius: 12px;
+  color: var(--text-strong);
+  font-family: var(--font-sans);
+}
+textarea:focus, input:focus, select:focus {
+  outline: none;
+  border-color: rgba(10, 33, 56, 0.4);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.55);
+}
+
+/* ───── Aquarium frame ─────
+   The canvas itself is the underwater scene, so it gets a
+   deep frame instead of the light panel base.  */
+.aquarium-frame {
+  background: linear-gradient(180deg, #0E2A48 0%, #0A2138 60%, #061C2E 100%);
+  border: 1px solid rgba(10, 33, 56, 0.18);
+  border-radius: 20px;
+  box-shadow: 0 8px 24px rgba(255, 255, 255, 0.4);
+}
+
+/* ───── Living signals (used inside the aquarium) ─────
+   Glow is reserved for things that are literally bioluminescent. */
+.living-dot {
+  width: 8px; height: 8px; border-radius: 999px;
+  background: var(--cyan);
+}
+
+/* Slow drift for parallax background layers */
+.drift-slow   { animation: drift 22s ease-in-out infinite; }
+.drift-slower { animation: drift 34s ease-in-out infinite; }
+@keyframes drift {
+  0%, 100% { transform: translate(0,0) rotate(0deg); }
+  50%      { transform: translate(6px,-4px) rotate(0.4deg); }
+}
+
+/* Panel entrance */
+.slide-in { animation: slideIn 0.45s cubic-bezier(.2,.7,.2,1); }
+@keyframes slideIn {
+  from { transform: translateY(8px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+/* Live cursor for streaming text */
+.stream-caret::after {
+  content: "▍";
+  display: inline-block;
+  margin-left: 2px;
+  color: #19314A;
+  opacity: 0.65;
+  animation: caret 1s steps(2, end) infinite;
+}
+@keyframes caret { 50% { opacity: 0; } }
+
+/* Roses meter pulse — kept short + soft */
+@keyframes rosesMeterPulse {
+  0%, 100% { background: rgba(10, 33, 56, 0.04); }
+  50%      { background: rgba(10, 33, 56, 0.10); }
+}
+.roses-pulse { animation: rosesMeterPulse 0.5s ease-in-out 3; }
+
+/* Speech-bubble pulsing dots */
+@keyframes speech-dot {
+  0%, 100% { opacity: 0.3; transform: translateY(0); }
+  50%      { opacity: 1;   transform: translateY(-1px); }
+}
