@@ -42,10 +42,15 @@ export type GrowthModelResult = {
 };
 
 export function parseGrowthResult(raw: string): GrowthModelResult {
-  // Strip markdown fences if the model wrapped the JSON
+  // Strip markdown fences if the model wrapped the JSON (handle truncated fences too)
   let cleaned = raw.trim();
   const fenceMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (fenceMatch) cleaned = fenceMatch[1].trim();
+  if (fenceMatch) {
+    cleaned = fenceMatch[1].trim();
+  } else {
+    // Truncated response: no closing fence — strip the opening fence if present
+    cleaned = cleaned.replace(/^```(?:json)?\s*/i, "").trim();
+  }
 
   // Find the outermost JSON object
   const start = cleaned.indexOf("{");
@@ -58,7 +63,9 @@ export function parseGrowthResult(raw: string): GrowthModelResult {
   try {
     parsed = JSON.parse(cleaned);
   } catch {
-    throw new Error("Could not parse model JSON. Raw:\n" + raw.slice(0, 400));
+    throw new Error(
+      `Could not parse model JSON (raw length: ${raw.length}, cleaned length: ${cleaned.length}). Cleaned:\n${cleaned.slice(0, 800)}`
+    );
   }
 
   if (!parsed || typeof parsed !== "object") throw new Error("Model returned non-object JSON.");

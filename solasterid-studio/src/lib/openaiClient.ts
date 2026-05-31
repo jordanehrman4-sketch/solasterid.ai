@@ -29,7 +29,7 @@ async function callAnthropicStream(
     },
     body: JSON.stringify({
       model,
-      max_tokens: 2048,
+      max_tokens: 8096,
       stream: true,
       messages: [{ role: "user", content: prompt }],
     }),
