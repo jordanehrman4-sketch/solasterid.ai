@@ -29,7 +29,7 @@ export function ExportHistory() {
 
   if (records.length === 0) {
     return (
-      <p className="mt-3 text-[10px] text-slate-600 italic">
+      <p className="mt-3 text-[10px] text-slate-800 italic">
         No local Solasterid fossils yet. Export after round 50 to start collecting.
       </p>
     );
@@ -37,7 +37,7 @@ export function ExportHistory() {
 
   return (
     <div className="mt-4 space-y-2">
-      <h3 className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Local Fossils</h3>
+      <h3 className="text-[11px] font-bold text-slate-800 uppercase tracking-wider">Local Fossils</h3>
       <AnimatePresence>
         {records.map((rec) => (
           <motion.div

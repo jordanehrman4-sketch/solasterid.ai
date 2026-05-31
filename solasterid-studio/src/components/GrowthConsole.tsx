@@ -23,11 +23,17 @@ import { MilestoneToast } from "./MilestoneToast";
 import { ProgressReef } from "./ProgressReef";
 import { AboutSheet } from "./AboutSheet";
 
-const MODELS = [
+const OPENAI_MODELS = [
   { id: "gpt-4.1-mini", label: "gpt-4.1-mini", note: "fast · cheap" },
   { id: "gpt-4.1", label: "gpt-4.1", note: "smart · costly" },
   { id: "gpt-4o-mini", label: "gpt-4o-mini", note: "alt fast" },
   { id: "gpt-4o", label: "gpt-4o", note: "alt smart" },
+];
+
+const ANTHROPIC_MODELS = [
+  { id: "claude-haiku-4-5-20251001", label: "Haiku 4.5", note: "fast · cheap" },
+  { id: "claude-sonnet-4-6", label: "Sonnet 4.6", note: "balanced" },
+  { id: "claude-opus-4-8", label: "Opus 4.8", note: "powerful" },
 ];
 
 const SPEED_PRESETS = [
@@ -89,6 +95,9 @@ function buildThoughtForRound(state: SolasteridState, isSeedRound: boolean): str
 }
 
 export function GrowthConsole({ apiKey, onClearKey }: Props) {
+  const isAnthropic = apiKey.trim().startsWith("sk-ant-");
+  const MODELS = isAnthropic ? ANTHROPIC_MODELS : OPENAI_MODELS;
+
   // ── State + restore ───────────────────────────────────────
   const [state, setState] = useState<SolasteridState>(() => {
     const saved = loadSavedState();
@@ -104,7 +113,9 @@ export function GrowthConsole({ apiKey, onClearKey }: Props) {
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [roundDelay, setRoundDelay] = useState(1200);
-  const [selectedModel, setSelectedModel] = useState("gpt-4.1-mini");
+  const [selectedModel, setSelectedModel] = useState(
+    isAnthropic ? "claude-haiku-4-5-20251001" : "gpt-4.1-mini"
+  );
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
 
@@ -612,8 +623,16 @@ export function GrowthConsole({ apiKey, onClearKey }: Props) {
             <section className="glass-panel" style={{ padding: 16 }}>
               <div className="flex items-baseline justify-between">
                 <div className="eyebrow">Growth Console</div>
-                <div className="text-[10.5px] mono" style={{ color: "var(--text-mute)" }}>
-                  {selectedModel}
+                <div className="flex items-center gap-2">
+                  <span
+                    className="text-[9px] eyebrow"
+                    style={{ color: isAnthropic ? "var(--lavender)" : "var(--foam)" }}
+                  >
+                    {isAnthropic ? "anthropic" : "openai"}
+                  </span>
+                  <span className="text-[10.5px] mono" style={{ color: "var(--text-mute)" }}>
+                    {selectedModel}
+                  </span>
                 </div>
               </div>
 

@@ -183,8 +183,10 @@ export function ApiKeyGate({ onApiKeyReady }: Props) {
   const [draftKey, setDraftKey] = useState("");
   const [showKey, setShowKey] = useState(false);
 
+  const trimmed = draftKey.trim();
+  const provider = trimmed.startsWith("sk-ant-") ? "anthropic" : trimmed ? "openai" : null;
+
   function submit() {
-    const trimmed = draftKey.trim();
     if (!trimmed) return;
     onApiKeyReady(trimmed);
     setDraftKey("");
@@ -250,14 +252,24 @@ export function ApiKeyGate({ onApiKeyReady }: Props) {
           className="mt-7 block text-[12px] font-display"
           style={{ color: "var(--text)", letterSpacing: "0.04em" }}
         >
-          OpenAI API key
+          <div className="flex items-center justify-between">
+            <span>API key</span>
+            {provider && (
+              <span
+                className="text-[10px] font-semibold"
+                style={{ color: provider === "anthropic" ? "var(--lavender)" : "var(--foam)", letterSpacing: "0.06em" }}
+              >
+                {provider === "anthropic" ? "Anthropic detected" : "OpenAI detected"}
+              </span>
+            )}
+          </div>
           <div className="relative mt-2">
             <input
               type={showKey ? "text" : "password"}
               value={draftKey}
               onChange={(e) => setDraftKey(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && submit()}
-              placeholder="sk-…"
+              placeholder="sk-… or sk-ant-…"
               className="w-full rounded-2xl px-4 py-3 outline-none transition-all"
               style={{
                 background: "rgba(255,255,255,0.78)",
@@ -298,7 +310,7 @@ export function ApiKeyGate({ onApiKeyReady }: Props) {
           style={{ color: "var(--text-mute)" }}
         >
           Your key stays in this tab's RAM. Never logged, never exported,
-          never sent anywhere except the OpenAI API.
+          never sent anywhere except the OpenAI or Anthropic API.
         </p>
       </motion.div>
     </div>

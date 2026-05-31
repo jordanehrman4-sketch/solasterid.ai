@@ -564,6 +564,8 @@ function LabelLayer({
   selectedArmId,
   hoveredArmId,
   hiddenArmIds,
+  onArmClick,
+  onArmHover,
 }: {
   active: ArmPlacement[];
   cx: number;
@@ -574,6 +576,8 @@ function LabelLayer({
   hoveredArmId: string | null;
   /** Arms currently showing a speech bubble — skip their label to avoid overlap. */
   hiddenArmIds: Set<string>;
+  onArmClick: (armId: string) => void;
+  onArmHover: (armId: string | null) => void;
 }) {
   const swayRad = (swayDeg * Math.PI) / 180;
   const cosS = Math.cos(swayRad);
@@ -612,8 +616,21 @@ function LabelLayer({
           >
             <span
               className="rounded-full font-display"
+              role="button"
+              tabIndex={0}
+              onClick={() => onArmClick(p.arm.id)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onArmClick(p.arm.id);
+                }
+              }}
+              onMouseEnter={() => onArmHover(p.arm.id)}
+              onMouseLeave={() => onArmHover(null)}
               style={{
                 display: "inline-block",
+                cursor: "pointer",
+                pointerEvents: "auto", // the container is click-through; the chip isn't
                 padding: isActiveLabel ? "3px 9px" : "2px 8px",
                 fontSize: isActiveLabel ? 12 : 11,
                 fontWeight: isActiveLabel ? 600 : 500,
@@ -864,29 +881,44 @@ export function SolasteridCanvas({
             transition: "transform 200ms linear",
           }}
         >
-          {/* Committee sector tints — very low opacity */}
+          {/* Committee grouping glow — a soft radial blob centered on each
+              committee's middle angle, out among its arms. Replaces the old
+              hard pie-wedge sectors, which formed an unwanted "Pac-Man" shape
+              whenever one committee held most of the arms. This reads as
+              ambient color grouping with no geometric edges. */}
           {sectors.map((s, i) => {
             if (s.cid === "__none") return null;
             const span = s.end - s.start;
             if (span < 0.05) return null;
-            const innerR = bodyRadius + 6;
-            const outerR = maxArmLength + bodyRadius + 30;
-            const x1 = cx + Math.cos(s.start) * outerR;
-            const y1 = cy + Math.sin(s.start) * outerR;
-            const x2 = cx + Math.cos(s.end) * outerR;
-            const y2 = cy + Math.sin(s.end) * outerR;
-            const x3 = cx + Math.cos(s.end) * innerR;
-            const y3 = cy + Math.sin(s.end) * innerR;
-            const x4 = cx + Math.cos(s.start) * innerR;
-            const y4 = cy + Math.sin(s.start) * innerR;
-            const large = span > Math.PI ? 1 : 0;
             return (
-              <path
-                key={`sector-${i}`}
-                d={`M ${x1} ${y1} A ${outerR} ${outerR} 0 ${large} 1 ${x2} ${y2}
-                    L ${x3} ${y3} A ${innerR} ${innerR} 0 ${large} 0 ${x4} ${y4} Z`}
-                fill={s.color}
-                opacity={0.045}
+              <radialGradient
+                key={`sectorGrad-${i}`}
+                id={`committeeGlow-${i}`}
+                cx="50%"
+                cy="50%"
+                r="50%"
+              >
+                <stop offset="0%" stopColor={s.color} stopOpacity={0.16} />
+                <stop offset="55%" stopColor={s.color} stopOpacity={0.06} />
+                <stop offset="100%" stopColor={s.color} stopOpacity={0} />
+              </radialGradient>
+            );
+          })}
+          {sectors.map((s, i) => {
+            if (s.cid === "__none") return null;
+            const span = s.end - s.start;
+            if (span < 0.05) return null;
+            const mid = (s.start + s.end) / 2;
+            const glowR = (maxArmLength + bodyRadius) * 0.62;
+            const gx = cx + Math.cos(mid) * (bodyRadius + maxArmLength * 0.45);
+            const gy = cy + Math.sin(mid) * (bodyRadius + maxArmLength * 0.45);
+            return (
+              <circle
+                key={`sectorGlow-${i}`}
+                cx={gx}
+                cy={gy}
+                r={glowR}
+                fill={`url(#committeeGlow-${i})`}
               />
             );
           })}
@@ -903,23 +935,6 @@ export function SolasteridCanvas({
             />
           ))}
 
-          {/* Retired arms = small fossil bits inside body */}
-          {retired.map(({ arm, geometry }) => (
-            <g
-              key={arm.id}
-              style={{ cursor: "pointer" }}
-              onClick={() => handleArmClick(arm.id)}
-              onMouseEnter={() => setHoveredArmId(arm.id)}
-              onMouseLeave={() => setHoveredArmId(null)}
-            >
-              <path
-                d={geometry.ribbon}
-                fill="#3A4E64"
-                opacity={hoveredArmId === arm.id ? 0.55 : 0.3}
-              />
-            </g>
-          ))}
-
           {/* Active arms — organic pastel ribbons */}
           <AnimatePresence>
             {active.map((p, i) => {
@@ -934,22 +949,25 @@ export function SolasteridCanvas({
                   animate={{ opacity: isDimmed ? 0.45 : 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.4 }}
                   transition={{ duration: 0.55, delay: i * 0.025 }}
-                  style={{ cursor: "pointer", transformOrigin: `${cx}px ${cy}px` }}
+                  style={{ cursor: "pointer", transformOrigin: `${cx}px ${cy}px`, pointerEvents: "all" }}
                   onClick={() => handleArmClick(arm.id)}
                   onMouseEnter={() => setHoveredArmId(arm.id)}
                   onMouseLeave={() => setHoveredArmId(null)}
                 >
                   {/* Invisible fat hit-area along the arm's centerline. The
                       visible ribbon tapers to ~3px at the tip, which made it
-                      almost impossible to hover; this transparent ~26px stroke
-                      gives the whole arm a generous, reliable target. */}
+                      almost impossible to click; this wide stroke gives the
+                      whole arm a generous target. NOTE: the stroke must be
+                      *painted* to be hittable — a `transparent`/`none` stroke
+                      is not captured, so we paint black at 0 opacity. */}
                   <path
                     d={geometry.center}
                     fill="none"
-                    stroke="transparent"
-                    strokeWidth={26}
+                    stroke="#000"
+                    strokeOpacity={0}
+                    strokeWidth={34}
                     strokeLinecap="round"
-                    style={{ pointerEvents: "stroke" }}
+                    pointerEvents="stroke"
                   />
                   {/* Main ribbon body */}
                   <path
@@ -958,6 +976,7 @@ export function SolasteridCanvas({
                     opacity={0.95}
                     stroke="rgba(0,0,0,0.25)"
                     strokeWidth={0.6}
+                    pointerEvents="fill"
                   />
                   {/* Upper highlight along the curve */}
                   <path
@@ -1005,9 +1024,21 @@ export function SolasteridCanvas({
               key={arm.id}
               animate={{ opacity: [0.32, 0.7, 0.32] }}
               transition={{ duration: 1.6, repeat: Infinity, delay: i * 0.35 }}
-              style={{ cursor: "pointer" }}
+              style={{ cursor: "pointer", pointerEvents: "all" }}
               onClick={() => handleArmClick(arm.id)}
+              onMouseEnter={() => setHoveredArmId(arm.id)}
+              onMouseLeave={() => setHoveredArmId(null)}
             >
+              {/* hit area */}
+              <path
+                d={geometry.center}
+                fill="none"
+                stroke="#000"
+                strokeOpacity={0}
+                strokeWidth={26}
+                strokeLinecap="round"
+                pointerEvents="stroke"
+              />
               <path
                 d={geometry.ribbon}
                 fill="rgba(200,176,232,0.32)"
@@ -1033,6 +1064,38 @@ export function SolasteridCanvas({
             pulsing={pulsingCore}
             isStreaming={isStreaming}
           />
+
+          {/* Retired arms = fossil bits embedded in the body. Drawn AFTER the
+              center creature so they sit on top of it and stay clickable
+              (previously the creature disc covered them entirely). Each gets a
+              generous invisible hit circle around its fossil fragment. */}
+          {retired.map(({ arm, geometry }) => {
+            const isHovered = hoveredArmId === arm.id;
+            return (
+              <g
+                key={arm.id}
+                style={{ cursor: "pointer", pointerEvents: "all" }}
+                onClick={() => handleArmClick(arm.id)}
+                onMouseEnter={() => setHoveredArmId(arm.id)}
+                onMouseLeave={() => setHoveredArmId(null)}
+              >
+                {/* invisible hit target over the fossil */}
+                <circle
+                  cx={geometry.tip.x}
+                  cy={geometry.tip.y}
+                  r={14}
+                  fill="#000"
+                  fillOpacity={0}
+                  pointerEvents="all"
+                />
+                <path
+                  d={geometry.ribbon}
+                  fill={isHovered ? "#7E8BA0" : "#3A4E64"}
+                  opacity={isHovered ? 0.8 : 0.5}
+                />
+              </g>
+            );
+          })}
         </g>
 
         {/* Arm-name labels are rendered as an HTML overlay below (LabelLayer),
@@ -1067,6 +1130,8 @@ export function SolasteridCanvas({
         selectedArmId={selectedArmId}
         hoveredArmId={hoveredArmId}
         hiddenArmIds={new Set(Object.keys(armBubbles))}
+        onArmClick={handleArmClick}
+        onArmHover={setHoveredArmId}
       />
 
       {/* AUTOPILOT badge — top of canvas, large + obvious */}
@@ -1377,7 +1442,7 @@ export function SolasteridCanvas({
             border: "1px solid rgba(143,255,230,0.12)",
           }}
         >
-          hover an arm to highlight it · click to read its lens
+          click any arm or its label to read its lens
         </div>
       )}
 
